@@ -1,0 +1,4 @@
+{
+  "buildCommand": "npm install typescript @types/react @types/react-dom && next build"
+}
+
