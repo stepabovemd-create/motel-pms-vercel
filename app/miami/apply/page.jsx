@@ -12,10 +12,18 @@ export default function MiamiApply() {
   async function onSubmit(e) {
     e.preventDefault();
     setErrors([]);
-    const res = await fetch(`/api/applications`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...values, brandKey: 'miami' }) });
-    const json = await res.json();
-    if (!res.ok) { setErrors(json.errors || ['Failed to submit']); return; }
-    setStep('verify-email');
+    try {
+      console.log('Submitting application:', values);
+      const res = await fetch(`/api/applications`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...values, brandKey: 'miami' }) });
+      console.log('Response status:', res.status);
+      const json = await res.json();
+      console.log('Response data:', json);
+      if (!res.ok) { setErrors(json.errors || ['Failed to submit']); return; }
+      setStep('verify-email');
+    } catch (error) {
+      console.error('Submit error:', error);
+      setErrors(['Network error: ' + error.message]);
+    }
   }
 
   async function verifyEmail(e) {
