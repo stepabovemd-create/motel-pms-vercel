@@ -19,12 +19,12 @@ export default function MiamiApply() {
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif' }}>
-      <header style={{ background: 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)', color: '#fff', padding: '24px 16px' }}>
+      <section style={{ background: 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)', color: '#fff', padding: '24px 16px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
           <h1 style={{ margin: 0 }}>Miami Motel Application</h1>
           <p style={{ margin: 0 }}>Weekly and monthly stays • 109 North Miami Avenue, Cleves, OH 45002</p>
         </div>
-      </header>
+      </section>
 
       <main style={{ maxWidth: 960, margin: '0 auto', padding: 16 }}>
         {errors.length ? (<div style={{ background: '#fff1f2', padding: 12, borderRadius: 6, color: '#991b1b', border: '1px solid #fecaca' }}><ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>) : null}

@@ -15,15 +15,6 @@ const colors = {
 export default function MiamiLanding() {
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif', color: colors.text }}>
-      <header style={{ borderBottom: `1px solid ${colors.border}`, background: colors.panel }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <strong style={{ color: colors.primary }}>Miami Motel</strong>
-          <nav style={{ display: 'flex', gap: 12 }}>
-            <Link href="/miami/apply" style={{ color: colors.primary, textDecoration: 'none', fontWeight: 600 }}>Apply / Pay</Link>
-            <a href="#amenities" style={{ color: colors.muted, textDecoration: 'none' }}>Amenities</a>
-          </nav>
-        </div>
-      </header>
 
       <section style={{ background: `linear-gradient(180deg, ${colors.primary} 0%, ${colors.primaryDark} 100%)`, color: '#fff', padding: '56px 16px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
