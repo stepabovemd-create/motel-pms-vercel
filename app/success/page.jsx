@@ -45,10 +45,10 @@ export default function SuccessPage() {
         </div>
       ) : (
         <>
-          <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0', marginBottom: 16 }}>
-            <h3 style={{ marginTop: 0, color: '#166534' }}>✓ Application Verified</h3>
-            <p style={{ color: '#166534' }}>Your email and ID have been verified. You can now proceed to secure payment.</p>
-          </div>
+                  <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0', marginBottom: 16 }}>
+                    <h3 style={{ marginTop: 0, color: '#166534' }}>✓ Application Verified</h3>
+                    <p style={{ color: '#166534' }}>Your email and ID have been verified. Stripe will perform additional identity verification during payment for enhanced security.</p>
+                  </div>
           
           <form onSubmit={startCheckout} style={{ display: 'grid', gap: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

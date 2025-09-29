@@ -5,7 +5,7 @@ export default function MiamiApply() {
   const [values, setValues] = useState({ firstName: '', lastName: '', email: '', phone: '', checkInDate: '', stayPlan: 'weekly' });
   const [errors, setErrors] = useState([]);
   const [submitted, setSubmitted] = useState(false);
-  const [step, setStep] = useState('form'); // 'form', 'verify-email', 'verify-id', 'complete'
+  const [step, setStep] = useState('verify-email'); // 'verify-email', 'verify-id', 'form', 'complete'
   const [emailCode, setEmailCode] = useState('');
   const [idPhoto, setIdPhoto] = useState(null);
 
@@ -25,7 +25,7 @@ export default function MiamiApply() {
         setErrors([errorMsg]); 
         return; 
       }
-      setStep('verify-email');
+      setStep('complete');
     } catch (error) {
       console.error('Submit error:', error);
       setErrors(['Network error: ' + error.message]);
@@ -53,7 +53,7 @@ export default function MiamiApply() {
     const res = await fetch('/api/verify-id', { method: 'POST', body: formData });
     const json = await res.json();
     if (!res.ok) { setErrors(json.errors || ['ID verification failed']); return; }
-    setStep('complete');
+    setStep('form');
   }
 
   const colors = { primary: '#dc2626', border: '#e5e7eb', muted: '#475569' };
@@ -64,6 +64,12 @@ export default function MiamiApply() {
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
           <h1 style={{ margin: 0 }}>Miami Motel Application</h1>
           <p style={{ margin: 0 }}>Weekly and monthly stays • 109 North Miami Avenue, Cleves, OH 45002</p>
+          <div style={{ marginTop: 8, fontSize: 14, opacity: 0.9 }}>
+            {step === 'verify-email' && 'Step 1: Verify your email address'}
+            {step === 'verify-id' && 'Step 2: Verify your identity'}
+            {step === 'form' && 'Step 3: Complete your application'}
+            {step === 'complete' && '✓ Application complete - proceed to payment'}
+          </div>
         </div>
       </section>
 
@@ -91,11 +97,13 @@ export default function MiamiApply() {
         {step === 'verify-email' && (
           <section style={{ background: '#f9fafb', padding: 16, borderRadius: 8 }}>
             <h3 style={{ marginTop: 0 }}>Verify Your Email</h3>
-            <p>We sent a verification code to <strong>{values.email}</strong>. Please enter it below:</p>
+            <p>Enter your email address and we'll send you a verification code:</p>
             <form onSubmit={verifyEmail} style={{ display: 'grid', gap: 12 }}>
+              <label>Email Address<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} placeholder="your@email.com" required /></label>
               <label>Verification Code<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={emailCode} onChange={e => setEmailCode(e.target.value)} placeholder="Enter 6-digit code" required /></label>
               <button type="submit" style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700 }}>Verify Email</button>
             </form>
+            <p style={{ fontSize: 14, color: colors.muted, marginTop: 8 }}>For demo: enter any 6-digit number (like 123456)</p>
           </section>
         )}
 
@@ -103,6 +111,9 @@ export default function MiamiApply() {
           <section style={{ background: '#f9fafb', padding: 16, borderRadius: 8 }}>
             <h3 style={{ marginTop: 0 }}>Verify Your Identity</h3>
             <p>Please upload a clear photo of your government-issued ID (driver's license, passport, etc.):</p>
+            <p style={{ fontSize: 14, color: colors.muted, background: '#f0f9ff', padding: 8, borderRadius: 4, border: '1px solid #bae6fd' }}>
+              <strong>Note:</strong> This is a basic verification. Stripe will perform additional identity verification during payment processing for enhanced security.
+            </p>
             <form onSubmit={verifyId} style={{ display: 'grid', gap: 12 }}>
               <label>ID Photo<input type="file" accept="image/*" onChange={e => setIdPhoto(e.target.files[0])} style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} required /></label>
               {idPhoto && <p style={{ color: colors.muted, fontSize: 14 }}>Selected: {idPhoto.name}</p>}
