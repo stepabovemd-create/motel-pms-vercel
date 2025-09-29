@@ -13,15 +13,15 @@ export async function POST(req) {
     const price = plan === 'weekly' ? 25000 : 80000;
     const description = plan === 'weekly' ? 'Weekly Room Rate' : 'Monthly Room Rate';
 
-    const origin = process.env.APP_BASE_URL || 'http://localhost:3000';
+    const origin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: email,
       line_items: [{ price_data: { currency: 'usd', product_data: { name: description }, unit_amount: price }, quantity: 1 }],
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/cancel`,
-      metadata: { plan, name },
+      cancel_url: `${origin}/miami/apply`,
+      metadata: { plan, name, email },
     });
 
     return new Response(JSON.stringify({ id: session.id, url: session.url }), { status: 200 });
