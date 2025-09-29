@@ -37,7 +37,22 @@ export default function MiamiApply() {
         setErrors([errorMsg]); 
         return; 
       }
-      setSubmitted(true);
+      // Redirect directly to Stripe checkout
+      const checkoutRes = await fetch('/api/checkout/session', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          name: `${values.firstName} ${values.lastName}`, 
+          email: values.email, 
+          plan: values.stayPlan 
+        }) 
+      });
+      const checkoutJson = await checkoutRes.json();
+      if (checkoutJson.url) {
+        window.location.href = checkoutJson.url;
+      } else {
+        setErrors([checkoutJson.error || 'Failed to start checkout']);
+      }
     } catch (error) {
       console.error('Submit error:', error);
       setErrors(['Network error: ' + error.message]);
@@ -87,9 +102,8 @@ export default function MiamiApply() {
 
         {submitted ? (
           <section style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0' }}>
-            <h3 style={{ marginTop: 0, color: '#166534' }}>✓ Application Complete!</h3>
-            <p style={{ color: '#166534' }}>Your application has been submitted and verified. You can now proceed to secure payment.</p>
-            <a href={`/success?email=${encodeURIComponent(values.email)}`} style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Proceed to Payment</a>
+            <h3 style={{ marginTop: 0, color: '#166534' }}>✓ Redirecting to Stripe...</h3>
+            <p style={{ color: '#166534' }}>Your application has been submitted and verified. Redirecting to secure payment...</p>
           </section>
         ) : (
           <div style={{ display: 'grid', gap: 24 }}>
