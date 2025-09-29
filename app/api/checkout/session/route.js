@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-06-20' });
 
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     const { email, name, plan } = await req.json();
     if (!email || !name || !plan) return new Response(JSON.stringify({ error: 'email, name, and plan required' }), { status: 400 });
@@ -23,8 +23,8 @@ export async function POST(req: Request) {
     });
 
     return new Response(JSON.stringify({ id: session.id, url: session.url }), { status: 200 });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message || 'Failed to create checkout session' }), { status: 500 });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Failed to create checkout session' }), { status: 500 });
   }
 }
 
