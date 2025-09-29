@@ -23,13 +23,8 @@ export async function POST(req) {
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdXZ1eG16cHBmZGV4aWl1dnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxNzI1NjgsImV4cCI6MjA3NDc0ODU2OH0.WGTv2s_IRdu4y_gQBF7lAonQ2Zi-h-L2sGbN5Jv30m4';
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    console.log('Creating table...');
-    await supabase.rpc('exec_sql', { 
-      sql: 'CREATE TABLE IF NOT EXISTS applications (id SERIAL PRIMARY KEY, brandKey TEXT, firstName TEXT, lastName TEXT, email TEXT, phone TEXT, checkInDate TEXT, stayPlan TEXT, createdAt TIMESTAMPTZ DEFAULT NOW());' 
-    });
-    
     console.log('Inserting application...');
-    const { error } = await supabase
+    const { data: result, error } = await supabase
       .from('applications')
       .insert([{
         brandKey: data.brandKey,
@@ -39,15 +34,19 @@ export async function POST(req) {
         phone: data.phone,
         checkInDate: data.checkInDate,
         stayPlan: data.stayPlan
-      }]);
+      }])
+      .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      return new Response(JSON.stringify({ error: error.message, details: error }), { status: 500 });
+    }
     
-    console.log('Application saved successfully');
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    console.log('Application saved successfully:', result);
+    return new Response(JSON.stringify({ ok: true, data: result }), { status: 200 });
   } catch (error) {
     console.error('API Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), { status: 500 });
   }
 }
 
