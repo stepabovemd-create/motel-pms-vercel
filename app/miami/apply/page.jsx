@@ -18,7 +18,12 @@ export default function MiamiApply() {
       console.log('Response status:', res.status);
       const json = await res.json();
       console.log('Response data:', json);
-      if (!res.ok) { setErrors(json.errors || ['Failed to submit']); return; }
+      console.log('Full response:', res);
+      if (!res.ok) { 
+        console.error('API Error Details:', json);
+        setErrors(json.errors || json.error || ['Failed to submit']); 
+        return; 
+      }
       setStep('verify-email');
     } catch (error) {
       console.error('Submit error:', error);
