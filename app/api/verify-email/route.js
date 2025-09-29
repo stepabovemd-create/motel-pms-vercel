@@ -9,6 +9,9 @@ export async function POST(req) {
   try {
     const { email, code } = await req.json();
     
+    console.log('Verification attempt:', { email, code, timestamp: new Date().toISOString() });
+    console.log('Stored codes:', Array.from(verificationCodes.entries()));
+    
     if (!email || !code) {
       return new Response(JSON.stringify({ errors: ['Email and code required'] }), { 
         status: 400,
@@ -18,6 +21,8 @@ export async function POST(req) {
 
     // Check if code matches
     const storedCode = verificationCodes.get(email);
+    console.log('Stored code for email:', storedCode);
+    
     if (storedCode && storedCode.code === code && storedCode.expires > Date.now()) {
       // Mark as verified
       verificationCodes.set(email, { ...storedCode, verified: true });
@@ -28,7 +33,18 @@ export async function POST(req) {
       });
     }
 
-    return new Response(JSON.stringify({ errors: ['Invalid or expired verification code'] }), { 
+    // More detailed error message
+    let errorMessage = 'Invalid verification code';
+    if (!storedCode) {
+      errorMessage = 'No verification code found for this email. Please request a new code.';
+    } else if (storedCode.expires <= Date.now()) {
+      errorMessage = 'Verification code has expired. Please request a new code.';
+    } else if (storedCode.code !== code) {
+      errorMessage = `Code mismatch. Expected: ${storedCode.code}, Got: ${code}`;
+    }
+
+    console.log('Verification failed:', errorMessage);
+    return new Response(JSON.stringify({ errors: [errorMessage] }), { 
       status: 400,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -59,6 +75,10 @@ export async function GET(req) {
     
     // Store code
     verificationCodes.set(email, { code, expires, verified: false });
+    
+    console.log(`Generated verification code for ${email}: ${code}`);
+    console.log(`Code expires at: ${new Date(expires).toISOString()}`);
+    console.log('All stored codes:', Array.from(verificationCodes.entries()));
     
     // Send email via Postmark
     if (process.env.POSTMARK_SERVER_TOKEN) {
