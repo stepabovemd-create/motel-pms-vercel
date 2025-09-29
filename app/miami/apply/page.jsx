@@ -18,11 +18,18 @@ export default function MiamiApply() {
     script.src = 'https://js.stripe.com/v3/';
     script.onload = () => {
       console.log('Stripe SDK loaded');
+      // Initialize Stripe
+      if (window.Stripe && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+        window.stripeInstance = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        console.log('Stripe initialized');
+      }
     };
     document.head.appendChild(script);
     
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 
@@ -148,21 +155,30 @@ export default function MiamiApply() {
       }
       
       setStripeIdentitySession(json);
-      console.log('Stripe Identity session created');
+      console.log('Stripe Identity session created:', json);
       
       // Launch Stripe Identity verification
-      if (window.Stripe && json.client_secret) {
-        const stripe = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+      if (window.stripeInstance && json.client_secret) {
+        console.log('Starting Stripe Identity verification with client_secret:', json.client_secret);
         
-        stripe.identity.verifyIdentity(json.client_secret).then((result) => {
+        window.stripeInstance.identity.verifyIdentity(json.client_secret).then((result) => {
+          console.log('Stripe Identity result:', result);
           if (result.error) {
             console.error('Stripe Identity error:', result.error);
             setErrors([result.error.message]);
           } else {
-            console.log('Stripe Identity verification completed:', result);
+            console.log('Stripe Identity verification completed successfully');
             setIdVerified(true);
           }
+        }).catch((error) => {
+          console.error('Stripe Identity catch error:', error);
+          setErrors(['Failed to start identity verification: ' + error.message]);
         });
+      } else {
+        console.error('Stripe not initialized or missing client_secret');
+        console.log('window.stripeInstance:', window.stripeInstance);
+        console.log('client_secret:', json.client_secret);
+        setErrors(['Stripe Identity not properly initialized']);
       }
       
     } catch (error) {
@@ -320,7 +336,7 @@ export default function MiamiApply() {
                     <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0' }}>
                       <h4 style={{ margin: '0 0 8px 0', color: '#166534' }}>Identity Verification Started</h4>
                       <p style={{ margin: '0 0 12px 0', color: '#166534' }}>
-                        Please complete the identity verification process in the popup window. You'll need to:
+                        Please complete the identity verification process. You'll need to:
                       </p>
                       <ul style={{ margin: '0 0 12px 0', color: '#166534', paddingLeft: 20 }}>
                         <li>Take a photo of your government-issued ID</li>
@@ -329,6 +345,9 @@ export default function MiamiApply() {
                       </ul>
                       <p style={{ margin: 0, fontSize: 14, color: '#166534' }}>
                         <strong>Note:</strong> This verification is handled securely by Stripe and may take a few minutes to complete.
+                      </p>
+                      <p style={{ margin: '8px 0 0 0', fontSize: 12, color: '#166534', fontStyle: 'italic' }}>
+                        If the verification window didn't open, check your browser's popup blocker or try again.
                       </p>
                     </div>
                   )}
