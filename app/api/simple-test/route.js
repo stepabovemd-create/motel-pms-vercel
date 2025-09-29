@@ -1,23 +1,21 @@
-export const dynamic = 'force-dynamic';
+export async function GET() {
+  return new Response(JSON.stringify({ message: 'API is working!' }), { 
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
 
 export async function POST(req) {
   try {
     const data = await req.json();
-    console.log('Received data:', data);
-    
-    // For now, just return success without database
-    console.log('Application received:', data);
-    
     return new Response(JSON.stringify({ 
-      ok: true, 
-      message: 'Application received successfully',
-      data: data 
+      message: 'POST is working!', 
+      received: data 
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('API Error:', error);
     return new Response(JSON.stringify({ 
       error: error.message 
     }), { 
@@ -26,5 +24,3 @@ export async function POST(req) {
     });
   }
 }
-
-
