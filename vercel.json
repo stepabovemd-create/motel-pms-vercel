@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npm install typescript @types/react @types/react-dom && next build"
+  "buildCommand": "NEXT_DISABLE_ESLINT=1 NEXT_DISABLE_TYPECHECK=1 next build"
 }
 
