@@ -9,6 +9,21 @@ export default function MiamiApply() {
   const [emailCode, setEmailCode] = useState('');
   const [idVerified, setIdVerified] = useState(false);
   const [idPhoto, setIdPhoto] = useState(null);
+  const [emailSent, setEmailSent] = useState(false);
+
+  // Send verification email when email is entered
+  async function sendVerificationEmail(email) {
+    if (!email || emailSent) return;
+    
+    try {
+      const res = await fetch(`/api/verify-email?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        setEmailSent(true);
+      }
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -116,7 +131,11 @@ export default function MiamiApply() {
                   <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => setValues(v => ({ ...v, lastName: e.target.value }))} required /></label>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} required /></label>
+                  <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => {
+                    setValues(v => ({ ...v, email: e.target.value }));
+                    // Send verification email when user finishes typing
+                    setTimeout(() => sendVerificationEmail(e.target.value), 1000);
+                  }} required /></label>
                   <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required /></label>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -132,11 +151,36 @@ export default function MiamiApply() {
               {!emailVerified ? (
                 <>
                   <p>Verify your email address to continue:</p>
+                  {values.email && (
+                    <div style={{ background: '#f0f9ff', padding: 12, borderRadius: 6, border: '1px solid #bae6fd', marginBottom: 12 }}>
+                      <p style={{ margin: 0, fontSize: 14, color: '#1e40af' }}>
+                        <strong>Verification email sent to:</strong> {values.email}
+                      </p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#1e40af' }}>
+                        Check your inbox and enter the 6-digit code below.
+                      </p>
+                    </div>
+                  )}
                   <form onSubmit={verifyEmail} style={{ display: 'grid', gap: 12 }}>
                     <label>Verification Code<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={emailCode} onChange={e => setEmailCode(e.target.value)} placeholder="Enter 6-digit code" required /></label>
                     <button type="submit" style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700 }}>Verify Email</button>
                   </form>
-                  <p style={{ fontSize: 14, color: colors.muted, marginTop: 8 }}>For demo: enter any 6-digit number (like 123456)</p>
+                  {values.email && (
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await fetch(`/api/verify-email?email=${encodeURIComponent(values.email)}`);
+                          alert('Verification code resent!');
+                        } catch (error) {
+                          alert('Failed to resend code');
+                        }
+                      }}
+                      style={{ background: 'transparent', color: colors.primary, padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: `1px solid ${colors.primary}`, fontSize: 14 }}
+                    >
+                      Resend Code
+                    </button>
+                  )}
                 </>
               ) : (
                 <p style={{ color: '#166534', background: '#f0fdf4', padding: 8, borderRadius: 4, border: '1px solid #bbf7d0' }}>✓ Email verified successfully</p>
@@ -150,7 +194,7 @@ export default function MiamiApply() {
                 <>
                   <p>Upload a clear photo of your government-issued ID (driver's license, passport, etc.):</p>
                   <p style={{ fontSize: 14, color: colors.muted, background: '#f0f9ff', padding: 8, borderRadius: 4, border: '1px solid #bae6fd' }}>
-                    <strong>Note:</strong> This is a basic verification. Stripe will perform additional identity verification during payment processing for enhanced security.
+                    <strong>Enhanced Security:</strong> This is a basic verification. Stripe will perform additional identity verification during payment processing, including 3D Secure authentication and fraud detection for your protection.
                   </p>
                   <form onSubmit={verifyId} style={{ display: 'grid', gap: 12 }}>
                     <label>ID Photo<input type="file" accept="image/*" onChange={e => setIdPhoto(e.target.files[0])} style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} required /></label>

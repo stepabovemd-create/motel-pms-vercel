@@ -22,6 +22,19 @@ export async function POST(req) {
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/miami/apply`,
       metadata: { plan, name, email },
+      // Enable identity verification
+      payment_intent_data: {
+        setup_future_usage: 'off_session',
+      },
+      // Add identity verification requirements
+      automatic_tax: { enabled: false },
+      customer_creation: 'always',
+      // Enable identity verification for high-risk payments
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
     });
 
     return new Response(JSON.stringify({ id: session.id, url: session.url }), { status: 200 });

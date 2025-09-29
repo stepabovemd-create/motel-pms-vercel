@@ -101,10 +101,6 @@ export default function SuccessPage() {
                   day: 'numeric' 
                 })}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: colors.muted }}>Session ID:</span>
-                <span style={{ fontSize: 12, fontFamily: 'monospace' }}>{sessionId}</span>
-              </div>
             </div>
           </div>
 
