@@ -30,18 +30,39 @@ export async function GET(req) {
       }
     ];
     
-    // Send reminders (in production, this would be real email sending)
+    // Send reminders via Postmark
+    const sentReminders = [];
     for (const customer of mockCustomers) {
       console.log(`Sending reminder to ${customer.email} for payment due ${customer.dueDate}`);
       
-      // In production, you would call your email service here
-      // await sendEmailReminder(customer);
+      try {
+        const reminderRes = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/send-reminder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(customer)
+        });
+        
+        const reminderResult = await reminderRes.json();
+        sentReminders.push({
+          email: customer.email,
+          success: reminderRes.ok,
+          result: reminderResult
+        });
+      } catch (error) {
+        console.error(`Failed to send reminder to ${customer.email}:`, error);
+        sentReminders.push({
+          email: customer.email,
+          success: false,
+          error: error.message
+        });
+      }
     }
     
     return new Response(JSON.stringify({ 
       message: 'Reminders cron job executed successfully',
       timestamp: new Date().toISOString(),
-      customersNotified: mockCustomers.length
+      customersNotified: mockCustomers.length,
+      remindersSent: sentReminders
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
