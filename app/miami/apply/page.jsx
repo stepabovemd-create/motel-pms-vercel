@@ -1,8 +1,6 @@
 "use client";
 import { useState } from 'react';
 
-export const metadata = { title: 'Apply | Miami Motel' };
-
 export default function MiamiApply() {
   const [values, setValues] = useState({ firstName: '', lastName: '', email: '', phone: '', checkInDate: '', stayPlan: 'weekly' });
   const [errors, setErrors] = useState([]);
