@@ -1,5 +1,7 @@
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 function validate(body) {
   const errors = [];
   const required = ['firstName', 'lastName', 'email', 'phone', 'checkInDate', 'stayPlan', 'brandKey'];

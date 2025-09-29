@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req) {
   const rawBody = await req.text();
