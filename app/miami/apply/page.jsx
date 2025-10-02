@@ -12,25 +12,41 @@ export default function MiamiApply() {
   const [emailSent, setEmailSent] = useState(false);
   const [stripeIdentitySession, setStripeIdentitySession] = useState(null);
 
-  // Load Stripe SDK for payments (we'll handle ID verification differently)
+  // Load Stripe SDK for payments and Identity
   useEffect(() => {
-    // Check if script already exists
-    if (document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
-      console.log('Stripe SDK already loaded');
+    // Check if scripts already exist
+    if (document.querySelector('script[src="https://js.stripe.com/v3/"]') && 
+        document.querySelector('script[src="https://js.stripe.com/identity/v1/identity.js"]')) {
+      console.log('Stripe SDKs already loaded');
       return;
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
-    script.async = true;
-    script.onload = () => {
-      console.log('Stripe SDK loaded successfully');
-      console.log('window.Stripe:', window.Stripe);
-    };
-    script.onerror = () => {
-      console.error('Failed to load Stripe SDK');
-    };
-    document.head.appendChild(script);
+    // Load Stripe v3 for payments
+    if (!document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
+      const script1 = document.createElement('script');
+      script1.src = 'https://js.stripe.com/v3/';
+      script1.async = true;
+      script1.onload = () => {
+        console.log('Stripe v3 SDK loaded successfully');
+        console.log('window.Stripe:', window.Stripe);
+      };
+      document.head.appendChild(script1);
+    }
+
+    // Load Stripe Identity SDK
+    if (!document.querySelector('script[src="https://js.stripe.com/identity/v1/identity.js"]')) {
+      const script2 = document.createElement('script');
+      script2.src = 'https://js.stripe.com/identity/v1/identity.js';
+      script2.async = true;
+      script2.onload = () => {
+        console.log('Stripe Identity SDK loaded successfully');
+        console.log('window.StripeIdentity:', window.StripeIdentity);
+      };
+      script2.onerror = () => {
+        console.error('Failed to load Stripe Identity SDK');
+      };
+      document.head.appendChild(script2);
+    }
   }, []);
 
   // Send verification email when email is entered
@@ -138,15 +154,62 @@ export default function MiamiApply() {
     }
   }
 
-  async function startIdVerification() {
+  async function startStripeIdentity() {
     setErrors([]);
     
-    // For now, we'll use a simple file upload approach
-    // In production, you could integrate with a proper ID verification service
-    console.log('Starting ID verification process...');
-    
-    // Set a flag that ID verification is "in progress"
-    setStripeIdentitySession({ status: 'started' });
+    try {
+      console.log('Starting Stripe Identity verification...');
+      const res = await fetch('/api/stripe-identity', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          email: values.email, 
+          name: `${values.firstName} ${values.lastName}` 
+        }) 
+      });
+      
+      const json = await res.json();
+      console.log('Stripe Identity response:', json);
+      
+      if (!res.ok) { 
+        setErrors([json.error || 'Failed to start identity verification']); 
+        return; 
+      }
+      
+      setStripeIdentitySession(json);
+      console.log('Stripe Identity session created:', json);
+      
+      // Wait a moment for SDK to be ready, then launch verification
+      setTimeout(() => {
+        console.log('Checking Stripe Identity SDK...');
+        console.log('window.StripeIdentity:', window.StripeIdentity);
+        
+        if (window.StripeIdentity && json.client_secret) {
+          console.log('Launching Stripe Identity verification...');
+          
+          window.StripeIdentity.verifyIdentity(json.client_secret).then((result) => {
+            console.log('Stripe Identity result:', result);
+            if (result.error) {
+              console.error('Stripe Identity error:', result.error);
+              setErrors([result.error.message]);
+            } else {
+              console.log('Stripe Identity verification completed successfully');
+              setIdVerified(true);
+            }
+          }).catch((error) => {
+            console.error('Stripe Identity catch error:', error);
+            setErrors(['Failed to complete identity verification: ' + error.message]);
+          });
+        } else {
+          console.error('Stripe Identity SDK not loaded');
+          setErrors(['Stripe Identity SDK not loaded. Please refresh the page and try again.']);
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Stripe Identity error:', error);
+      setErrors(['Network error during identity verification']);
+    }
   }
 
   async function verifyId(e) {
@@ -196,14 +259,10 @@ export default function MiamiApply() {
                   <label>First name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.firstName} onChange={e => setValues(v => ({ ...v, firstName: e.target.value }))} required /></label>
                   <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => setValues(v => ({ ...v, lastName: e.target.value }))} required /></label>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => {
-                    setValues(v => ({ ...v, email: e.target.value }));
-                    // Send verification email when user finishes typing
-                    setTimeout(() => sendVerificationEmail(e.target.value), 1000);
-                  }} required /></label>
-                  <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required /></label>
-                </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                          <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} required /></label>
+                          <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required /></label>
+                        </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <label>Check-in date<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="date" value={values.checkInDate} onChange={e => setValues(v => ({ ...v, checkInDate: e.target.value }))} required /></label>
                   <label>Plan<select style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.stayPlan} onChange={e => setValues(v => ({ ...v, stayPlan: e.target.value }))}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
@@ -217,49 +276,42 @@ export default function MiamiApply() {
               {!emailVerified ? (
                 <>
                   <p>Verify your email address to continue:</p>
-                  {values.email && emailSent && (
+                  
+                  {values.email && (
                     <div style={{ background: '#f0f9ff', padding: 12, borderRadius: 6, border: '1px solid #bae6fd', marginBottom: 12 }}>
                       <p style={{ margin: 0, fontSize: 14, color: '#1e40af' }}>
-                        <strong>Verification email sent to:</strong> {values.email}
-                      </p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#1e40af' }}>
-                        Check your inbox and enter the 6-digit code below.
-                      </p>
-                    </div>
-                  )}
-                  {values.email && !emailSent && (
-                    <div style={{ background: '#fef3c7', padding: 12, borderRadius: 6, border: '1px solid #f59e0b', marginBottom: 12 }}>
-                      <p style={{ margin: 0, fontSize: 14, color: '#92400e' }}>
                         <strong>Email entered:</strong> {values.email}
                       </p>
-                      <button 
-                        type="button"
-                        onClick={() => sendVerificationEmail(values.email)}
-                        style={{ background: colors.primary, color: '#fff', padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: 'none', fontSize: 14, marginTop: 8 }}
-                      >
-                        Send Verification Code
-                      </button>
+                      {!emailSent ? (
+                        <button 
+                          type="button"
+                          onClick={() => sendVerificationEmail(values.email)}
+                          style={{ background: colors.primary, color: '#fff', padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: 'none', fontSize: 14, marginTop: 8 }}
+                        >
+                          Send Verification Code
+                        </button>
+                      ) : (
+                        <div style={{ marginTop: 8 }}>
+                          <p style={{ margin: '0 0 8px 0', fontSize: 14, color: '#1e40af' }}>
+                            ✓ Verification email sent! Check your inbox.
+                          </p>
+                          <button 
+                            type="button"
+                            onClick={() => sendVerificationEmail(values.email)}
+                            style={{ background: 'transparent', color: colors.primary, padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: `1px solid ${colors.primary}`, fontSize: 14 }}
+                          >
+                            Resend Code
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-                  <form onSubmit={verifyEmail} style={{ display: 'grid', gap: 12 }}>
-                    <label>Verification Code<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={emailCode} onChange={e => setEmailCode(e.target.value)} placeholder="Enter 6-digit code" required /></label>
-                    <button type="submit" style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700 }}>Verify Email</button>
-                  </form>
-                  {values.email && (
-                    <button 
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await fetch(`/api/verify-email?email=${encodeURIComponent(values.email)}`);
-                          alert('Verification code resent!');
-                        } catch (error) {
-                          alert('Failed to resend code');
-                        }
-                      }}
-                      style={{ background: 'transparent', color: colors.primary, padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: `1px solid ${colors.primary}`, fontSize: 14 }}
-                    >
-                      Resend Code
-                    </button>
+                  
+                  {emailSent && (
+                    <form onSubmit={verifyEmail} style={{ display: 'grid', gap: 12 }}>
+                      <label>Verification Code<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={emailCode} onChange={e => setEmailCode(e.target.value)} placeholder="Enter 6-digit code" required /></label>
+                      <button type="submit" style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700 }}>Verify Email</button>
+                    </form>
                   )}
                 </>
               ) : (
@@ -272,19 +324,50 @@ export default function MiamiApply() {
               <h3 style={{ marginTop: 0 }}>Identity Verification {idVerified && <span style={{ color: '#166534' }}>✓</span>}</h3>
               {!idVerified ? (
                 <>
-                  <p>Upload a clear photo of your government-issued ID:</p>
+                  <p>Verify your identity using Stripe's secure verification:</p>
                   <p style={{ fontSize: 14, color: colors.muted, background: '#f0f9ff', padding: 8, borderRadius: 4, border: '1px solid #bae6fd' }}>
-                    <strong>Enhanced Security:</strong> Please upload a clear photo of your driver's license, passport, or state ID. Stripe will perform additional identity verification during payment processing for enhanced security.
+                    <strong>Secure Verification:</strong> Stripe Identity will verify your government-issued ID and take a selfie to ensure you are who you claim to be. This provides enhanced security for your stay.
                   </p>
                   
-                  <form onSubmit={verifyId} style={{ display: 'grid', gap: 12 }}>
-                    <label>ID Photo<input type="file" accept="image/*" onChange={e => setIdPhoto(e.target.files[0])} style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} required /></label>
-                    {idPhoto && <p style={{ color: colors.muted, fontSize: 14 }}>Selected: {idPhoto.name}</p>}
-                    <button type="submit" style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700 }}>Verify ID</button>
-                  </form>
+                  {!stripeIdentitySession ? (
+                    <button 
+                      onClick={startStripeIdentity}
+                      disabled={!values.firstName || !values.lastName || !values.email}
+                      style={{ 
+                        background: (!values.firstName || !values.lastName || !values.email) ? '#9ca3af' : colors.primary, 
+                        color: '#fff', 
+                        padding: '.8rem 1.2rem', 
+                        borderRadius: 8, 
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: (!values.firstName || !values.lastName || !values.email) ? 'not-allowed' : 'pointer',
+                        fontSize: 16
+                      }}
+                    >
+                      {(!values.firstName || !values.lastName || !values.email) ? 'Complete form above first' : 'Start Identity Verification'}
+                    </button>
+                  ) : (
+                    <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                      <h4 style={{ margin: '0 0 8px 0', color: '#166534' }}>Identity Verification Started</h4>
+                      <p style={{ margin: '0 0 12px 0', color: '#166534' }}>
+                        Please complete the identity verification process. You'll need to:
+                      </p>
+                      <ul style={{ margin: '0 0 12px 0', color: '#166534', paddingLeft: 20 }}>
+                        <li>Take a photo of your government-issued ID</li>
+                        <li>Take a selfie to match your ID</li>
+                        <li>Wait for verification to complete</li>
+                      </ul>
+                      <p style={{ margin: 0, fontSize: 14, color: '#166534' }}>
+                        <strong>Note:</strong> This verification is handled securely by Stripe and may take a few minutes to complete.
+                      </p>
+                      <p style={{ margin: '8px 0 0 0', fontSize: 12, color: '#166534', fontStyle: 'italic' }}>
+                        If the verification window didn't open, check your browser's popup blocker or try again.
+                      </p>
+                    </div>
+                  )}
                 </>
               ) : (
-                <p style={{ color: '#166534', background: '#f0fdf4', padding: 8, borderRadius: 4, border: '1px solid #bbf7d0' }}>✓ ID verified successfully</p>
+                <p style={{ color: '#166534', background: '#f0fdf4', padding: 8, borderRadius: 4, border: '1px solid #bbf7d0' }}>✓ Identity verified successfully</p>
               )}
             </section>
 
