@@ -171,8 +171,12 @@ export default function MiamiApply() {
       
       const json = await res.json();
       console.log('Verification response:', json);
+      console.log('Response status:', res.status);
+      console.log('Response ok:', res.ok);
       
       if (!res.ok) { 
+        console.error('Verification failed with status:', res.status);
+        console.error('Error details:', json);
         setErrors(json.errors || ['Invalid verification code']); 
         return; 
       }

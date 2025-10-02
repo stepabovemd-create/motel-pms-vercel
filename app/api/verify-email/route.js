@@ -9,10 +9,15 @@ export async function POST(req) {
   try {
     const { email, code } = await req.json();
     
-    console.log('Verification attempt:', { email, code, timestamp: new Date().toISOString() });
-    console.log('Stored codes:', Array.from(verificationCodes.entries()));
+    console.log('=== VERIFICATION ATTEMPT ===');
+    console.log('Email:', email);
+    console.log('Code:', code);
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Current map size:', verificationCodes.size);
+    console.log('All stored codes:', Array.from(verificationCodes.entries()));
     
     if (!email || !code) {
+      console.log('Missing email or code');
       return new Response(JSON.stringify({ errors: ['Email and code required'] }), { 
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -24,13 +29,17 @@ export async function POST(req) {
     
     // Try to get the code multiple times to handle race conditions
     let storedCode = verificationCodes.get(email);
+    console.log('First attempt - stored code:', storedCode);
+    
     if (!storedCode) {
+      console.log('No code found, waiting and retrying...');
       // Wait a bit more and try again
       await new Promise(resolve => setTimeout(resolve, 300));
       storedCode = verificationCodes.get(email);
+      console.log('Second attempt - stored code:', storedCode);
     }
     
-    console.log('Stored code for email:', storedCode);
+    console.log('Final stored code for email:', storedCode);
     console.log('Current time:', Date.now());
     console.log('Code created:', storedCode?.created);
     console.log('Code expires:', storedCode?.expires);
@@ -38,7 +47,7 @@ export async function POST(req) {
     if (storedCode && storedCode.code === code && storedCode.expires > Date.now()) {
       // Mark as verified
       verificationCodes.set(email, { ...storedCode, verified: true });
-      console.log(`Email verified for ${email}`);
+      console.log(`✅ Email verified for ${email}`);
       return new Response(JSON.stringify({ success: true }), { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -49,15 +58,17 @@ export async function POST(req) {
     let errorMessage = 'Invalid verification code';
     if (!storedCode) {
       errorMessage = 'No verification code found for this email. Please request a new code.';
-      console.log('Available codes:', Array.from(verificationCodes.keys()));
+      console.log('❌ Available codes:', Array.from(verificationCodes.keys()));
+      console.log('❌ Looking for email:', email);
     } else if (storedCode.expires <= Date.now()) {
       errorMessage = 'Verification code has expired. Please request a new code.';
-      console.log(`Code expired ${Date.now() - storedCode.expires}ms ago`);
+      console.log(`❌ Code expired ${Date.now() - storedCode.expires}ms ago`);
     } else if (storedCode.code !== code) {
       errorMessage = `Code mismatch. Expected: ${storedCode.code}, Got: ${code}`;
+      console.log(`❌ Code mismatch: Expected "${storedCode.code}", Got "${code}"`);
     }
 
-    console.log('Verification failed:', errorMessage);
+    console.log('❌ Verification failed:', errorMessage);
     return new Response(JSON.stringify({ errors: [errorMessage] }), { 
       status: 400,
       headers: { 'Content-Type': 'application/json' }
@@ -100,7 +111,9 @@ export async function GET(req) {
     
     console.log(`Generated verification code for ${email}: ${code}`);
     console.log(`Code expires at: ${new Date(expires).toISOString()}`);
+    console.log(`Code created at: ${new Date().toISOString()}`);
     console.log('All stored codes:', Array.from(verificationCodes.entries()));
+    console.log('Verification codes map size:', verificationCodes.size);
     
     // Send email via Postmark
     if (process.env.POSTMARK_SERVER_TOKEN) {
