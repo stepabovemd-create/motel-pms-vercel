@@ -15,26 +15,42 @@ export default function MiamiApply() {
   // Load Stripe Identity SDK
   useEffect(() => {
     // Check if script already exists
-    if (document.querySelector('script[src="https://js.stripe.com/identity/v1/identity.js"]')) {
+    if (document.querySelector('script[src*="stripe.com/identity"]')) {
       console.log('Stripe Identity SDK already loaded');
       return;
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/identity/v1/identity.js';
-    script.async = true;
-    script.onload = () => {
-      console.log('Stripe Identity SDK loaded successfully');
-      console.log('window.StripeIdentity:', window.StripeIdentity);
+    // Try multiple SDK URLs
+    const sdkUrls = [
+      'https://js.stripe.com/identity/v1/identity.js',
+      'https://js.stripe.com/v3/',
+      'https://identity.stripe.com/v1/identity.js'
+    ];
+
+    let currentUrlIndex = 0;
+
+    const loadScript = (urlIndex) => {
+      if (urlIndex >= sdkUrls.length) {
+        console.error('All Stripe Identity SDK URLs failed to load');
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = sdkUrls[urlIndex];
+      script.async = true;
+      script.onload = () => {
+        console.log(`Stripe SDK loaded successfully from: ${sdkUrls[urlIndex]}`);
+        console.log('window.StripeIdentity:', window.StripeIdentity);
+        console.log('window.Stripe:', window.Stripe);
+      };
+      script.onerror = () => {
+        console.error(`Failed to load Stripe SDK from: ${sdkUrls[urlIndex]}`);
+        loadScript(urlIndex + 1);
+      };
+      document.head.appendChild(script);
     };
-    script.onerror = () => {
-      console.error('Failed to load Stripe Identity SDK');
-    };
-    document.head.appendChild(script);
-    
-    return () => {
-      // Don't remove the script on cleanup to avoid reloading
-    };
+
+    loadScript(0);
   }, []);
 
   // Send verification email when email is entered
@@ -43,6 +59,10 @@ export default function MiamiApply() {
     
     try {
       console.log('Sending verification email to:', email);
+      
+      // Add a small delay to ensure the API is ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const res = await fetch(`/api/verify-email?email=${encodeURIComponent(email)}`);
       const result = await res.json();
       console.log('Email send result:', result);
@@ -165,7 +185,12 @@ export default function MiamiApply() {
       
       // Launch Stripe Identity verification with a small delay to ensure SDK is loaded
       setTimeout(() => {
+        console.log('Checking available Stripe APIs...');
+        console.log('window.StripeIdentity:', window.StripeIdentity);
+        console.log('window.Stripe:', window.Stripe);
+        
         if (window.StripeIdentity && json.client_secret) {
+          console.log('Using Stripe Identity API');
           console.log('Starting Stripe Identity verification with client_secret:', json.client_secret);
           
           window.StripeIdentity.verifyIdentity(json.client_secret).then((result) => {
@@ -181,13 +206,33 @@ export default function MiamiApply() {
             console.error('Stripe Identity catch error:', error);
             setErrors(['Failed to start identity verification: ' + error.message]);
           });
+        } else if (window.Stripe && json.client_secret) {
+          console.log('Using Stripe v3 API');
+          console.log('Starting Stripe verification with client_secret:', json.client_secret);
+          
+          // Try using Stripe v3 identity verification
+          const stripe = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+          stripe.identity.verifyIdentity(json.client_secret).then((result) => {
+            console.log('Stripe v3 Identity result:', result);
+            if (result.error) {
+              console.error('Stripe v3 Identity error:', result.error);
+              setErrors([result.error.message]);
+            } else {
+              console.log('Stripe v3 Identity verification completed successfully');
+              setIdVerified(true);
+            }
+          }).catch((error) => {
+            console.error('Stripe v3 Identity catch error:', error);
+            setErrors(['Failed to start identity verification: ' + error.message]);
+          });
         } else {
-          console.error('Stripe Identity not loaded or missing client_secret');
+          console.error('No Stripe API available');
           console.log('window.StripeIdentity:', window.StripeIdentity);
+          console.log('window.Stripe:', window.Stripe);
           console.log('client_secret:', json.client_secret);
-          setErrors(['Stripe Identity SDK not loaded. Please wait a moment and try again.']);
+          setErrors(['Stripe SDK not loaded. Please refresh the page and try again.']);
         }
-      }, 1000); // Wait 1 second for SDK to be fully loaded
+      }, 2000); // Wait 2 seconds for SDK to be fully loaded
       
     } catch (error) {
       console.error('Stripe Identity error:', error);
