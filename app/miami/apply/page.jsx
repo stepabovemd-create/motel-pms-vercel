@@ -17,24 +17,42 @@ export default function MiamiApply() {
     // Check if scripts already exist
     if (document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
       console.log('Stripe SDK already loaded');
-      return;
+    } else {
+      // Load Stripe v3 for payments
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.async = true;
+      script.onload = () => {
+        console.log('Stripe v3 SDK loaded successfully');
+        console.log('window.Stripe:', window.Stripe);
+        
+        // Initialize Stripe with publishable key
+        if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+          window.stripeInstance = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+          console.log('Stripe instance initialized');
+        }
+      };
+      document.head.appendChild(script);
     }
 
-    // Load Stripe v3 for payments
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
-    script.async = true;
-    script.onload = () => {
-      console.log('Stripe v3 SDK loaded successfully');
-      console.log('window.Stripe:', window.Stripe);
-      
-      // Initialize Stripe with publishable key
-      if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-        window.stripeInstance = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-        console.log('Stripe instance initialized');
+    // Restore form data from localStorage
+    const savedData = localStorage.getItem('miami-motel-form-data');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setValues(parsedData);
+        console.log('Form data restored from localStorage:', parsedData);
+      } catch (error) {
+        console.error('Failed to parse saved form data:', error);
       }
-    };
-    document.head.appendChild(script);
+    }
+
+    // Restore email verification state
+    const savedEmailVerified = localStorage.getItem('miami-motel-email-verified');
+    if (savedEmailVerified === 'true') {
+      setEmailVerified(true);
+      console.log('Email verification state restored');
+    }
 
     // Check if returning from Stripe Identity verification
     const urlParams = new URLSearchParams(window.location.search);
@@ -45,6 +63,11 @@ export default function MiamiApply() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
+
+  // Save form data to localStorage
+  const saveFormData = (formValues) => {
+    localStorage.setItem('miami-motel-form-data', JSON.stringify(formValues));
+  };
 
   // Send verification email when email is entered
   async function sendVerificationEmail(email) {
@@ -144,6 +167,7 @@ export default function MiamiApply() {
       }
       
       setEmailVerified(true);
+      localStorage.setItem('miami-motel-email-verified', 'true');
       console.log('Email verified successfully');
     } catch (error) {
       console.error('Verification error:', error);
@@ -175,6 +199,10 @@ export default function MiamiApply() {
       
       setStripeIdentitySession(json);
       console.log('Stripe Identity session created:', json);
+      
+      // Save form data before redirecting
+      saveFormData(values);
+      console.log('Form data saved before redirect');
       
       // Redirect to Stripe's hosted verification page
       if (json.url) {
@@ -234,16 +262,40 @@ export default function MiamiApply() {
               <h3 style={{ marginTop: 0 }}>Application Information</h3>
               <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>First name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.firstName} onChange={e => setValues(v => ({ ...v, firstName: e.target.value }))} required /></label>
-                  <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => setValues(v => ({ ...v, lastName: e.target.value }))} required /></label>
+                  <label>First name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.firstName} onChange={e => {
+                    const newValues = { ...values, firstName: e.target.value };
+                    setValues(newValues);
+                    saveFormData(newValues);
+                  }} required /></label>
+                  <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => {
+                    const newValues = { ...values, lastName: e.target.value };
+                    setValues(newValues);
+                    saveFormData(newValues);
+                  }} required /></label>
                 </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                          <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} required /></label>
-                          <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required /></label>
+                          <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => {
+                            const newValues = { ...values, email: e.target.value };
+                            setValues(newValues);
+                            saveFormData(newValues);
+                          }} required /></label>
+                          <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => {
+                            const newValues = { ...values, phone: e.target.value };
+                            setValues(newValues);
+                            saveFormData(newValues);
+                          }} required /></label>
                         </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>Check-in date<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="date" value={values.checkInDate} onChange={e => setValues(v => ({ ...v, checkInDate: e.target.value }))} required /></label>
-                  <label>Plan<select style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.stayPlan} onChange={e => setValues(v => ({ ...v, stayPlan: e.target.value }))}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+                  <label>Check-in date<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="date" value={values.checkInDate} onChange={e => {
+                    const newValues = { ...values, checkInDate: e.target.value };
+                    setValues(newValues);
+                    saveFormData(newValues);
+                  }} required /></label>
+                  <label>Plan<select style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.stayPlan} onChange={e => {
+                    const newValues = { ...values, stayPlan: e.target.value };
+                    setValues(newValues);
+                    saveFormData(newValues);
+                  }}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
                 </div>
               </form>
             </section>

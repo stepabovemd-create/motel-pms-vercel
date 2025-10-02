@@ -19,7 +19,8 @@ export async function POST(req) {
       });
     }
 
-    // Check if code matches
+    // Check if code matches - wait a moment for any pending storage
+    await new Promise(resolve => setTimeout(resolve, 100));
     const storedCode = verificationCodes.get(email);
     console.log('Stored code for email:', storedCode);
     
