@@ -305,7 +305,7 @@ export default function SuccessPage() {
               borderRadius: 8,
               display: 'inline-block',
               transition: 'all 0.3s ease'
-            }}>← Back to Miami Motel</a>
+            }}>- Back to Miami Motel</a>
           </div>
         </div>
       </div>
