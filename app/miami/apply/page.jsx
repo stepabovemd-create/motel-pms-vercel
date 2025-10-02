@@ -291,78 +291,305 @@ export default function MiamiApply() {
     setIdVerified(true);
   }
 
-  const colors = { primary: '#dc2626', border: '#e5e7eb', muted: '#475569' };
+  const colors = { 
+    primary: '#dc2626', 
+    primaryDark: '#b91c1c',
+    border: '#e5e7eb', 
+    muted: '#475569',
+    background: '#f8fafc',
+    card: '#ffffff',
+    text: '#0f172a'
+  };
 
   return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif' }}>
-      <section style={{ background: 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)', color: '#fff', padding: '24px 16px' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
-          <h1 style={{ margin: 0 }}>Miami Motel Application</h1>
-          <p style={{ margin: 0 }}>Weekly and monthly stays • 109 North Miami Avenue, Cleves, OH 45002</p>
-          <div style={{ marginTop: 8, fontSize: 14, opacity: 0.9 }}>
+    <div style={{ 
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      background: colors.background,
+      minHeight: '100vh'
+    }}>
+      <section style={{ 
+        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', 
+        color: '#fff', 
+        padding: '60px 16px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none'
+        }} />
+        <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1
+          }}>Miami Motel Application</h1>
+          <p style={{ 
+            margin: '16px 0 0 0', 
+            fontSize: 18,
+            opacity: 0.95
+          }}>Weekly and monthly stays • 109 North Miami Avenue, Cleves, OH 45002</p>
+          <div style={{ 
+            marginTop: 16, 
+            fontSize: 16, 
+            opacity: 0.9,
+            maxWidth: '600px',
+            lineHeight: 1.5
+          }}>
             Complete your application and verification to proceed to secure payment
           </div>
         </div>
       </section>
 
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: 16 }}>
-        {errors.length ? (<div style={{ background: '#fff1f2', padding: 12, borderRadius: 6, color: '#991b1b', border: '1px solid #fecaca' }}><ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>) : null}
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 16px' }}>
+        {errors.length ? (
+          <div style={{ 
+            background: '#fff1f2', 
+            padding: 20, 
+            borderRadius: 12, 
+            color: '#991b1b', 
+            border: '1px solid #fecaca',
+            marginBottom: 24,
+            boxShadow: '0 1px 3px 0 rgba(0,0,0,0.1)'
+          }}>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>{errors.map(e => <li key={e}>{e}</li>)}</ul>
+          </div>
+        ) : null}
 
         {submitted ? (
-          <section style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0' }}>
-            <h3 style={{ marginTop: 0, color: '#166534' }}>✓ Redirecting to Stripe...</h3>
-            <p style={{ color: '#166534' }}>Your application has been submitted and verified. Redirecting to secure payment...</p>
+          <section style={{ 
+            background: '#f0fdf4', 
+            padding: 32, 
+            borderRadius: 16, 
+            border: '1px solid #bbf7d0',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ 
+              marginTop: 0, 
+              color: '#166534',
+              fontSize: 24,
+              fontWeight: 700
+            }}>✓ Redirecting to Stripe...</h3>
+            <p style={{ 
+              color: '#166534',
+              fontSize: 16,
+              margin: 0
+            }}>Your application has been submitted and verified. Redirecting to secure payment...</p>
           </section>
         ) : (
-          <div style={{ display: 'grid', gap: 24 }}>
+          <div style={{ display: 'grid', gap: 32 }}>
             {/* Application Form */}
-            <section style={{ background: '#f9fafb', padding: 16, borderRadius: 8 }}>
-              <h3 style={{ marginTop: 0 }}>Application Information</h3>
-              <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>First name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.firstName} onChange={e => setValues(v => ({ ...v, firstName: e.target.value }))} required /></label>
-                  <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => setValues(v => ({ ...v, lastName: e.target.value }))} required /></label>
+            <section style={{ 
+              background: colors.card, 
+              padding: 32, 
+              borderRadius: 16,
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+              border: '1px solid #e5e7eb'
+            }}>
+              <h3 style={{ 
+                marginTop: 0, 
+                fontSize: 24,
+                fontWeight: 700,
+                color: colors.text,
+                marginBottom: 24
+              }}>Application Information</h3>
+              <form onSubmit={onSubmit} style={{ display: 'grid', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600, 
+                      color: colors.text,
+                      fontSize: 14
+                    }}>First name</label>
+                    <input style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} value={values.firstName} onChange={e => setValues(v => ({ ...v, firstName: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600, 
+                      color: colors.text,
+                      fontSize: 14
+                    }}>Last name</label>
+                    <input style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} value={values.lastName} onChange={e => setValues(v => ({ ...v, lastName: e.target.value }))} required />
+                  </div>
                 </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                          <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} required /></label>
-                          <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required /></label>
-                        </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>Check-in date<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="date" value={values.checkInDate} onChange={e => setValues(v => ({ ...v, checkInDate: e.target.value }))} required /></label>
-                  <label>Plan<select style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.stayPlan} onChange={e => setValues(v => ({ ...v, stayPlan: e.target.value }))}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600, 
+                      color: colors.text,
+                      fontSize: 14
+                    }}>Email</label>
+                    <input style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600, 
+                      color: colors.text,
+                      fontSize: 14
+                    }}>Phone</label>
+                    <input style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600, 
+                      color: colors.text,
+                      fontSize: 14
+                    }}>Check-in date</label>
+                    <input style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} type="date" value={values.checkInDate} onChange={e => setValues(v => ({ ...v, checkInDate: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600, 
+                      color: colors.text,
+                      fontSize: 14
+                    }}>Plan</label>
+                    <select style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} value={values.stayPlan} onChange={e => setValues(v => ({ ...v, stayPlan: e.target.value }))}>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
                 </div>
               </form>
             </section>
 
             {/* Email Verification */}
-            <section style={{ background: '#f9fafb', padding: 16, borderRadius: 8 }}>
-              <h3 style={{ marginTop: 0 }}>Email Verification {emailVerified && <span style={{ color: '#166534' }}>✓</span>}</h3>
+            <section style={{ 
+              background: colors.card, 
+              padding: 32, 
+              borderRadius: 16,
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+              border: '1px solid #e5e7eb'
+            }}>
+              <h3 style={{ 
+                marginTop: 0, 
+                fontSize: 24,
+                fontWeight: 700,
+                color: colors.text,
+                marginBottom: 24
+              }}>Email Verification {emailVerified && <span style={{ color: '#166534' }}>✓</span>}</h3>
               {!emailVerified ? (
                 <>
                   <p>Verify your email address to continue:</p>
                   
                   {values.email && (
-                    <div style={{ background: '#f0f9ff', padding: 12, borderRadius: 6, border: '1px solid #bae6fd', marginBottom: 12 }}>
-                      <p style={{ margin: 0, fontSize: 14, color: '#1e40af' }}>
+                    <div style={{ 
+                      background: '#f0f9ff', 
+                      padding: 20, 
+                      borderRadius: 12, 
+                      border: '1px solid #bae6fd', 
+                      marginBottom: 20 
+                    }}>
+                      <p style={{ margin: 0, fontSize: 16, color: '#1e40af', fontWeight: 600 }}>
                         <strong>Email entered:</strong> {values.email}
                       </p>
                       {!emailSent ? (
                         <button 
                           type="button"
                           onClick={() => sendVerificationEmail(values.email)}
-                          style={{ background: colors.primary, color: '#fff', padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: 'none', fontSize: 14, marginTop: 8 }}
+                          style={{ 
+                            background: colors.primary, 
+                            color: '#fff', 
+                            padding: '12px 24px', 
+                            borderRadius: 8, 
+                            fontWeight: 600, 
+                            border: 'none', 
+                            fontSize: 16, 
+                            marginTop: 12,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
                           Send Verification Code
                         </button>
                       ) : (
-                        <div style={{ marginTop: 8 }}>
-                          <p style={{ margin: '0 0 8px 0', fontSize: 14, color: '#1e40af' }}>
+                        <div style={{ marginTop: 12 }}>
+                          <p style={{ margin: '0 0 12px 0', fontSize: 16, color: '#1e40af', fontWeight: 600 }}>
                             ✓ Verification email sent! Check your inbox.
                           </p>
                           <button 
                             type="button"
                             onClick={() => sendVerificationEmail(values.email)}
-                            style={{ background: 'transparent', color: colors.primary, padding: '.4rem .8rem', borderRadius: 6, fontWeight: 600, border: `1px solid ${colors.primary}`, fontSize: 14 }}
+                            style={{ 
+                              background: 'transparent', 
+                              color: colors.primary, 
+                              padding: '12px 24px', 
+                              borderRadius: 8, 
+                              fontWeight: 600, 
+                              border: `2px solid ${colors.primary}`, 
+                              fontSize: 16,
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease'
+                            }}
                           >
                             Resend Code
                           </button>
@@ -372,9 +599,37 @@ export default function MiamiApply() {
                   )}
                   
                   {emailSent && (
-                    <form onSubmit={verifyEmail} style={{ display: 'grid', gap: 12 }}>
-                      <label>Verification Code<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={emailCode} onChange={e => setEmailCode(e.target.value)} placeholder="Enter 6-digit code" required /></label>
-                      <button type="submit" style={{ background: colors.primary, color: '#fff', padding: '.6rem .9rem', borderRadius: 8, fontWeight: 700 }}>Verify Email</button>
+                    <form onSubmit={verifyEmail} style={{ display: 'grid', gap: 20 }}>
+                      <div>
+                        <label style={{ 
+                          display: 'block', 
+                          marginBottom: 8, 
+                          fontWeight: 600, 
+                          color: colors.text,
+                          fontSize: 14
+                        }}>Verification Code</label>
+                        <input style={{ 
+                          width: '100%',
+                          border: `2px solid ${colors.border}`, 
+                          borderRadius: 12, 
+                          padding: 14,
+                          fontSize: 16,
+                          transition: 'all 0.3s ease',
+                          boxSizing: 'border-box'
+                        }} value={emailCode} onChange={e => setEmailCode(e.target.value)} placeholder="Enter 6-digit code" required />
+                      </div>
+                      <button type="submit" style={{ 
+                        background: colors.primary, 
+                        color: '#fff', 
+                        padding: '16px 32px', 
+                        borderRadius: 12, 
+                        fontWeight: 700,
+                        fontSize: 16,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        alignSelf: 'start'
+                      }}>Verify Email</button>
                     </form>
                   )}
                 </>
@@ -384,8 +639,20 @@ export default function MiamiApply() {
             </section>
 
             {/* ID Verification */}
-            <section style={{ background: '#f9fafb', padding: 16, borderRadius: 8 }}>
-              <h3 style={{ marginTop: 0 }}>Identity Verification {idVerified && <span style={{ color: '#166534' }}>✓</span>}</h3>
+            <section style={{ 
+              background: colors.card, 
+              padding: 32, 
+              borderRadius: 16,
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+              border: '1px solid #e5e7eb'
+            }}>
+              <h3 style={{ 
+                marginTop: 0, 
+                fontSize: 24,
+                fontWeight: 700,
+                color: colors.text,
+                marginBottom: 24
+              }}>Identity Verification {idVerified && <span style={{ color: '#166534' }}>✓</span>}</h3>
               {!idVerified ? (
                 <>
                   <p>Verify your identity using Stripe's secure verification:</p>
@@ -400,12 +667,14 @@ export default function MiamiApply() {
                       style={{ 
                         background: (!values.firstName || !values.lastName || !values.email) ? '#9ca3af' : colors.primary, 
                         color: '#fff', 
-                        padding: '.8rem 1.2rem', 
-                        borderRadius: 8, 
+                        padding: '16px 32px', 
+                        borderRadius: 12, 
                         fontWeight: 700,
                         border: 'none',
                         cursor: (!values.firstName || !values.lastName || !values.email) ? 'not-allowed' : 'pointer',
-                        fontSize: 16
+                        fontSize: 16,
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
                       }}
                     >
                       {(!values.firstName || !values.lastName || !values.email) ? 'Complete form above first' : 'Start Identity Verification'}
@@ -440,12 +709,16 @@ export default function MiamiApply() {
               style={{ 
                 background: (!emailVerified || !idVerified) ? '#9ca3af' : colors.primary, 
                 color: '#fff', 
-                padding: '.8rem 1.2rem', 
-                borderRadius: 8, 
+                padding: '20px 40px', 
+                borderRadius: 16, 
                 fontWeight: 700,
-                fontSize: 16,
+                fontSize: 18,
                 border: 'none',
-                cursor: (!emailVerified || !idVerified) ? 'not-allowed' : 'pointer'
+                cursor: (!emailVerified || !idVerified) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: (!emailVerified || !idVerified) ? 'none' : '0 8px 25px -8px rgba(220, 38, 38, 0.4)',
+                alignSelf: 'center',
+                justifySelf: 'center'
               }}
             >
               {(!emailVerified || !idVerified) ? 'Complete verification above to submit' : 'Submit Application & Proceed to Payment'}
