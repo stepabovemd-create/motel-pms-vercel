@@ -22,6 +22,7 @@ export async function POST(req) {
         email: email,
         name: name,
       },
+      return_url: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/miami/apply?verified=true`,
       options: {
         document: {
           allowed_types: ['driving_license', 'id_card', 'passport'],
@@ -36,7 +37,8 @@ export async function POST(req) {
 
     return new Response(JSON.stringify({ 
       client_secret: verificationSession.client_secret,
-      session_id: verificationSession.id 
+      session_id: verificationSession.id,
+      url: verificationSession.url
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }

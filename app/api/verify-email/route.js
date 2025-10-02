@@ -73,9 +73,11 @@ export async function GET(req) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
     
-    // Store code with a small delay to ensure it's stored before email is sent
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Store code immediately and add a longer delay before sending email
     verificationCodes.set(email, { code, expires, verified: false });
+    
+    // Add delay to ensure code is properly stored before email is sent
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log(`Generated verification code for ${email}: ${code}`);
     console.log(`Code expires at: ${new Date(expires).toISOString()}`);

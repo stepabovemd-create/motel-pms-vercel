@@ -15,37 +15,34 @@ export default function MiamiApply() {
   // Load Stripe SDK for payments and Identity
   useEffect(() => {
     // Check if scripts already exist
-    if (document.querySelector('script[src="https://js.stripe.com/v3/"]') && 
-        document.querySelector('script[src="https://js.stripe.com/identity/v1/identity.js"]')) {
-      console.log('Stripe SDKs already loaded');
+    if (document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
+      console.log('Stripe SDK already loaded');
       return;
     }
 
     // Load Stripe v3 for payments
-    if (!document.querySelector('script[src="https://js.stripe.com/v3/"]')) {
-      const script1 = document.createElement('script');
-      script1.src = 'https://js.stripe.com/v3/';
-      script1.async = true;
-      script1.onload = () => {
-        console.log('Stripe v3 SDK loaded successfully');
-        console.log('window.Stripe:', window.Stripe);
-      };
-      document.head.appendChild(script1);
-    }
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.async = true;
+    script.onload = () => {
+      console.log('Stripe v3 SDK loaded successfully');
+      console.log('window.Stripe:', window.Stripe);
+      
+      // Initialize Stripe with publishable key
+      if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+        window.stripeInstance = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        console.log('Stripe instance initialized');
+      }
+    };
+    document.head.appendChild(script);
 
-    // Load Stripe Identity SDK
-    if (!document.querySelector('script[src="https://js.stripe.com/identity/v1/identity.js"]')) {
-      const script2 = document.createElement('script');
-      script2.src = 'https://js.stripe.com/identity/v1/identity.js';
-      script2.async = true;
-      script2.onload = () => {
-        console.log('Stripe Identity SDK loaded successfully');
-        console.log('window.StripeIdentity:', window.StripeIdentity);
-      };
-      script2.onerror = () => {
-        console.error('Failed to load Stripe Identity SDK');
-      };
-      document.head.appendChild(script2);
+    // Check if returning from Stripe Identity verification
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true') {
+      console.log('Returned from Stripe Identity verification');
+      setIdVerified(true);
+      // Remove the query parameter from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -179,32 +176,13 @@ export default function MiamiApply() {
       setStripeIdentitySession(json);
       console.log('Stripe Identity session created:', json);
       
-      // Wait a moment for SDK to be ready, then launch verification
-      setTimeout(() => {
-        console.log('Checking Stripe Identity SDK...');
-        console.log('window.StripeIdentity:', window.StripeIdentity);
-        
-        if (window.StripeIdentity && json.client_secret) {
-          console.log('Launching Stripe Identity verification...');
-          
-          window.StripeIdentity.verifyIdentity(json.client_secret).then((result) => {
-            console.log('Stripe Identity result:', result);
-            if (result.error) {
-              console.error('Stripe Identity error:', result.error);
-              setErrors([result.error.message]);
-            } else {
-              console.log('Stripe Identity verification completed successfully');
-              setIdVerified(true);
-            }
-          }).catch((error) => {
-            console.error('Stripe Identity catch error:', error);
-            setErrors(['Failed to complete identity verification: ' + error.message]);
-          });
-        } else {
-          console.error('Stripe Identity SDK not loaded');
-          setErrors(['Stripe Identity SDK not loaded. Please refresh the page and try again.']);
-        }
-      }, 2000);
+      // Redirect to Stripe's hosted verification page
+      if (json.url) {
+        console.log('Redirecting to Stripe Identity verification page...');
+        window.location.href = json.url;
+      } else {
+        setErrors(['Failed to get verification URL from Stripe']);
+      }
       
     } catch (error) {
       console.error('Stripe Identity error:', error);
@@ -350,18 +328,16 @@ export default function MiamiApply() {
                     <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0' }}>
                       <h4 style={{ margin: '0 0 8px 0', color: '#166534' }}>Identity Verification Started</h4>
                       <p style={{ margin: '0 0 12px 0', color: '#166534' }}>
-                        Please complete the identity verification process. You'll need to:
+                        You will be redirected to Stripe's secure verification page. You'll need to:
                       </p>
                       <ul style={{ margin: '0 0 12px 0', color: '#166534', paddingLeft: 20 }}>
                         <li>Take a photo of your government-issued ID</li>
                         <li>Take a selfie to match your ID</li>
-                        <li>Wait for verification to complete</li>
+                        <li>Complete the verification process</li>
+                        <li>Return to this page when finished</li>
                       </ul>
                       <p style={{ margin: 0, fontSize: 14, color: '#166534' }}>
-                        <strong>Note:</strong> This verification is handled securely by Stripe and may take a few minutes to complete.
-                      </p>
-                      <p style={{ margin: '8px 0 0 0', fontSize: 12, color: '#166534', fontStyle: 'italic' }}>
-                        If the verification window didn't open, check your browser's popup blocker or try again.
+                        <strong>Note:</strong> This verification is handled securely by Stripe and will redirect you back here when complete.
                       </p>
                     </div>
                   )}
