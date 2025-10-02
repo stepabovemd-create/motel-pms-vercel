@@ -20,9 +20,20 @@ export async function POST(req) {
     }
 
     // Check if code matches - wait a moment for any pending storage
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const storedCode = verificationCodes.get(email);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Try to get the code multiple times to handle race conditions
+    let storedCode = verificationCodes.get(email);
+    if (!storedCode) {
+      // Wait a bit more and try again
+      await new Promise(resolve => setTimeout(resolve, 300));
+      storedCode = verificationCodes.get(email);
+    }
+    
     console.log('Stored code for email:', storedCode);
+    console.log('Current time:', Date.now());
+    console.log('Code created:', storedCode?.created);
+    console.log('Code expires:', storedCode?.expires);
     
     if (storedCode && storedCode.code === code && storedCode.expires > Date.now()) {
       // Mark as verified
@@ -38,8 +49,10 @@ export async function POST(req) {
     let errorMessage = 'Invalid verification code';
     if (!storedCode) {
       errorMessage = 'No verification code found for this email. Please request a new code.';
+      console.log('Available codes:', Array.from(verificationCodes.keys()));
     } else if (storedCode.expires <= Date.now()) {
       errorMessage = 'Verification code has expired. Please request a new code.';
+      console.log(`Code expired ${Date.now() - storedCode.expires}ms ago`);
     } else if (storedCode.code !== code) {
       errorMessage = `Code mismatch. Expected: ${storedCode.code}, Got: ${code}`;
     }
@@ -74,11 +87,16 @@ export async function GET(req) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
     
-    // Store code immediately and add a longer delay before sending email
-    verificationCodes.set(email, { code, expires, verified: false });
+    // Store code immediately with a timestamp
+    verificationCodes.set(email, { 
+      code, 
+      expires, 
+      verified: false, 
+      created: Date.now() 
+    });
     
-    // Add delay to ensure code is properly stored before email is sent
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait a moment to ensure code is fully stored before proceeding
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     console.log(`Generated verification code for ${email}: ${code}`);
     console.log(`Code expires at: ${new Date(expires).toISOString()}`);
