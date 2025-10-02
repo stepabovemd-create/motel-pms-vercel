@@ -301,7 +301,7 @@ export default function SuccessPage() {
               fontWeight: 600,
               fontSize: 16,
               padding: '12px 24px',
-              border: `2px solid ${colors.primary}`,
+              border: '2px solid ' + colors.primary,
               borderRadius: 8,
               display: 'inline-block',
               transition: 'all 0.3s ease'
