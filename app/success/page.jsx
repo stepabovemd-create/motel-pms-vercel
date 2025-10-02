@@ -180,7 +180,7 @@ export default function SuccessPage() {
                         borderBottom: '1px solid #f1f5f9'
                       }}>
                         <span style={{ color: colors.muted, fontWeight: 600 }}>Amount Paid:</span>
-                        <span style={{ fontWeight: 700, fontSize: 18, color: colors.primary }}>${paymentData.amount}</span>
+                        <span style={{ fontWeight: 700, fontSize: 18, color: colors.primary }}>$`{paymentData.amount}`</span>
                       </div>
                       <div style={{ 
                         display: 'flex', 
@@ -219,7 +219,7 @@ export default function SuccessPage() {
                       fontSize: 16,
                       lineHeight: 1.6
                     }}>
-                      Your next payment of <strong style={{ fontSize: 18 }}>${paymentData.amount}</strong> is due on{' '}
+                      Your next payment of <strong style={{ fontSize: 18 }}>$`{paymentData.amount}`</strong> is due on{' '}
                       <strong>{getNextPaymentDate(paymentData.plan)}</strong>
                     </p>
                     <p style={{ 
