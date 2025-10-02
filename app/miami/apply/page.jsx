@@ -14,17 +14,26 @@ export default function MiamiApply() {
 
   // Load Stripe Identity SDK
   useEffect(() => {
+    // Check if script already exists
+    if (document.querySelector('script[src="https://js.stripe.com/identity/v1/identity.js"]')) {
+      console.log('Stripe Identity SDK already loaded');
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/identity/v1/identity.js';
+    script.async = true;
     script.onload = () => {
-      console.log('Stripe Identity SDK loaded');
+      console.log('Stripe Identity SDK loaded successfully');
+      console.log('window.StripeIdentity:', window.StripeIdentity);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Stripe Identity SDK');
     };
     document.head.appendChild(script);
     
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
+      // Don't remove the script on cleanup to avoid reloading
     };
   }, []);
 
@@ -41,6 +50,8 @@ export default function MiamiApply() {
       if (res.ok) {
         setEmailSent(true);
         console.log('Verification email sent successfully');
+        // Reset emailSent after 30 seconds to allow resending
+        setTimeout(() => setEmailSent(false), 30000);
       } else {
         console.error('Failed to send email:', result);
       }
@@ -152,29 +163,31 @@ export default function MiamiApply() {
       setStripeIdentitySession(json);
       console.log('Stripe Identity session created:', json);
       
-      // Launch Stripe Identity verification
-      if (window.StripeIdentity && json.client_secret) {
-        console.log('Starting Stripe Identity verification with client_secret:', json.client_secret);
-        
-        window.StripeIdentity.verifyIdentity(json.client_secret).then((result) => {
-          console.log('Stripe Identity result:', result);
-          if (result.error) {
-            console.error('Stripe Identity error:', result.error);
-            setErrors([result.error.message]);
-          } else {
-            console.log('Stripe Identity verification completed successfully');
-            setIdVerified(true);
-          }
-        }).catch((error) => {
-          console.error('Stripe Identity catch error:', error);
-          setErrors(['Failed to start identity verification: ' + error.message]);
-        });
-      } else {
-        console.error('Stripe Identity not loaded or missing client_secret');
-        console.log('window.StripeIdentity:', window.StripeIdentity);
-        console.log('client_secret:', json.client_secret);
-        setErrors(['Stripe Identity SDK not loaded. Please refresh the page and try again.']);
-      }
+      // Launch Stripe Identity verification with a small delay to ensure SDK is loaded
+      setTimeout(() => {
+        if (window.StripeIdentity && json.client_secret) {
+          console.log('Starting Stripe Identity verification with client_secret:', json.client_secret);
+          
+          window.StripeIdentity.verifyIdentity(json.client_secret).then((result) => {
+            console.log('Stripe Identity result:', result);
+            if (result.error) {
+              console.error('Stripe Identity error:', result.error);
+              setErrors([result.error.message]);
+            } else {
+              console.log('Stripe Identity verification completed successfully');
+              setIdVerified(true);
+            }
+          }).catch((error) => {
+            console.error('Stripe Identity catch error:', error);
+            setErrors(['Failed to start identity verification: ' + error.message]);
+          });
+        } else {
+          console.error('Stripe Identity not loaded or missing client_secret');
+          console.log('window.StripeIdentity:', window.StripeIdentity);
+          console.log('client_secret:', json.client_secret);
+          setErrors(['Stripe Identity SDK not loaded. Please wait a moment and try again.']);
+        }
+      }, 1000); // Wait 1 second for SDK to be fully loaded
       
     } catch (error) {
       console.error('Stripe Identity error:', error);
