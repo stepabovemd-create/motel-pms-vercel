@@ -35,29 +35,34 @@ export default function MiamiApply() {
       document.head.appendChild(script);
     }
 
-    // Restore form data from localStorage
-    const savedData = localStorage.getItem('miami-motel-form-data');
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        setValues(parsedData);
-        console.log('Form data restored from localStorage:', parsedData);
-      } catch (error) {
-        console.error('Failed to parse saved form data:', error);
-      }
-    }
-
-    // Restore email verification state
-    const savedEmailVerified = localStorage.getItem('miami-motel-email-verified');
-    if (savedEmailVerified === 'true') {
-      setEmailVerified(true);
-      console.log('Email verification state restored');
-    }
-
     // Check if returning from Stripe Identity verification
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('verified') === 'true') {
       console.log('Returned from Stripe Identity verification');
+      
+      // Only restore form data when returning from Stripe Identity
+      const savedData = localStorage.getItem('miami-motel-form-data');
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          setValues(parsedData);
+          console.log('Form data restored from localStorage:', parsedData);
+          // Clear the saved data after restoring
+          localStorage.removeItem('miami-motel-form-data');
+        } catch (error) {
+          console.error('Failed to parse saved form data:', error);
+        }
+      }
+
+      // Restore email verification state
+      const savedEmailVerified = localStorage.getItem('miami-motel-email-verified');
+      if (savedEmailVerified === 'true') {
+        setEmailVerified(true);
+        console.log('Email verification state restored');
+        // Clear the saved email verification state after restoring
+        localStorage.removeItem('miami-motel-email-verified');
+      }
+      
       setIdVerified(true);
       // Remove the query parameter from URL
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -123,6 +128,12 @@ export default function MiamiApply() {
         setErrors([errorMsg]); 
         return; 
       }
+      
+      // Clear localStorage since application is being submitted
+      localStorage.removeItem('miami-motel-form-data');
+      localStorage.removeItem('miami-motel-email-verified');
+      console.log('LocalStorage cleared after successful application submission');
+      
       // Redirect directly to Stripe checkout
       const checkoutRes = await fetch('/api/checkout/session', { 
         method: 'POST', 
@@ -262,40 +273,16 @@ export default function MiamiApply() {
               <h3 style={{ marginTop: 0 }}>Application Information</h3>
               <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>First name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.firstName} onChange={e => {
-                    const newValues = { ...values, firstName: e.target.value };
-                    setValues(newValues);
-                    saveFormData(newValues);
-                  }} required /></label>
-                  <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => {
-                    const newValues = { ...values, lastName: e.target.value };
-                    setValues(newValues);
-                    saveFormData(newValues);
-                  }} required /></label>
+                  <label>First name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.firstName} onChange={e => setValues(v => ({ ...v, firstName: e.target.value }))} required /></label>
+                  <label>Last name<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.lastName} onChange={e => setValues(v => ({ ...v, lastName: e.target.value }))} required /></label>
                 </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                          <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => {
-                            const newValues = { ...values, email: e.target.value };
-                            setValues(newValues);
-                            saveFormData(newValues);
-                          }} required /></label>
-                          <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => {
-                            const newValues = { ...values, phone: e.target.value };
-                            setValues(newValues);
-                            saveFormData(newValues);
-                          }} required /></label>
+                          <label>Email<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="email" value={values.email} onChange={e => setValues(v => ({ ...v, email: e.target.value }))} required /></label>
+                          <label>Phone<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="tel" value={values.phone} onChange={e => setValues(v => ({ ...v, phone: e.target.value }))} required /></label>
                         </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>Check-in date<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="date" value={values.checkInDate} onChange={e => {
-                    const newValues = { ...values, checkInDate: e.target.value };
-                    setValues(newValues);
-                    saveFormData(newValues);
-                  }} required /></label>
-                  <label>Plan<select style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.stayPlan} onChange={e => {
-                    const newValues = { ...values, stayPlan: e.target.value };
-                    setValues(newValues);
-                    saveFormData(newValues);
-                  }}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+                  <label>Check-in date<input style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} type="date" value={values.checkInDate} onChange={e => setValues(v => ({ ...v, checkInDate: e.target.value }))} required /></label>
+                  <label>Plan<select style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 10 }} value={values.stayPlan} onChange={e => setValues(v => ({ ...v, stayPlan: e.target.value }))}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
                 </div>
               </form>
             </section>
