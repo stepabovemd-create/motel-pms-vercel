@@ -290,7 +290,6 @@ export default function SuccessPage() {
                 </div>
               )}
             </div>
-          </div>
 
           <div style={{ 
             marginTop: 40, 
