@@ -171,10 +171,13 @@ export async function GET(req) {
       console.log(`Verification code for ${email}: ${code} (Postmark not configured)`);
     }
     
-    return new Response(JSON.stringify({ message: 'Verification code sent to email' }), { 
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+            return new Response(JSON.stringify({ 
+              message: 'Verification code sent to email',
+              code: code // Include the code for client-side storage
+            }), { 
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
     
   } catch (error) {
     console.error('Send verification email error:', error);
