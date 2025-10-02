@@ -106,7 +106,7 @@ export default function SuccessPage() {
         <div style={{ textAlign: 'center', padding: 40 }}>
           <p>Loading payment details...</p>
         </div>
-              ) : sessionId && paymentData ? (
+      ) : sessionId && paymentData ? (
                 <div style={{ display: 'grid', gap: 32 }}>
                   {/* Payment Confirmation */}
                   <div style={{ 
