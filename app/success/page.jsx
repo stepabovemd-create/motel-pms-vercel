@@ -179,7 +179,24 @@ export default function SuccessPage() {
                   padding: '12px 0',
                   borderBottom: '1px solid #f1f5f9'
                 }}>
-                  <span style={{ color: colors.muted, fontWeight: 600 }}>Amount Paid:</span>
+                  <span style={{ color: colors.muted, fontWeight: 600 }}>Room Rate:</span>
+                  <span style={{ fontWeight: 600 }}>${paymentData.breakdown?.roomRate || (paymentData.plan === 'weekly' ? '250' : '800')}</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  padding: '12px 0',
+                  borderBottom: '1px solid #f1f5f9'
+                }}>
+                  <span style={{ color: colors.muted, fontWeight: 600 }}>Move-in Fee:</span>
+                  <span style={{ fontWeight: 600 }}>${paymentData.breakdown?.moveInFee || '100'}</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  padding: '12px 0'
+                }}>
+                  <span style={{ color: colors.muted, fontWeight: 600 }}>Total Paid:</span>
                   <span style={{ fontWeight: 700, fontSize: 18, color: colors.primary }}>${paymentData.amount}</span>
                 </div>
                 <div style={{ 
@@ -219,7 +236,7 @@ export default function SuccessPage() {
                 fontSize: 16,
                 lineHeight: 1.6
               }}>
-                Your next payment of <strong style={{ fontSize: 18 }}>${paymentData.amount}</strong> is due on{' '}
+                Your next payment of <strong style={{ fontSize: 18 }}>${paymentData.breakdown?.roomRate || (paymentData.plan === 'weekly' ? '250' : '800')}</strong> is due on{' '}
                 <strong>{getNextPaymentDate(paymentData.plan)}</strong>
               </p>
               <p style={{ 

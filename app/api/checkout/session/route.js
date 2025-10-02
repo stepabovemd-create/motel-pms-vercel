@@ -12,16 +12,38 @@ export async function POST(req) {
 
     const price = plan === 'weekly' ? 25000 : 80000;
     const description = plan === 'weekly' ? 'Weekly Room Rate' : 'Monthly Room Rate';
+    const moveInFee = 10000; // $100.00 in cents
 
     const origin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    
+    // Create line items including move-in fee
+    const lineItems = [
+      { 
+        price_data: { 
+          currency: 'usd', 
+          product_data: { name: description }, 
+          unit_amount: price 
+        }, 
+        quantity: 1 
+      },
+      { 
+        price_data: { 
+          currency: 'usd', 
+          product_data: { name: 'Move-in Fee' }, 
+          unit_amount: moveInFee 
+        }, 
+        quantity: 1 
+      }
+    ];
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: email,
-      line_items: [{ price_data: { currency: 'usd', product_data: { name: description }, unit_amount: price }, quantity: 1 }],
+      line_items: lineItems,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/miami/apply`,
-      metadata: { plan, name, email },
+      metadata: { plan, name, email, moveInFee: '10000' },
       // Enable identity verification
       payment_intent_data: {
         setup_future_usage: 'off_session',

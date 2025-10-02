@@ -31,6 +31,11 @@ export async function GET(req) {
     const plan = session.metadata?.plan || 'weekly';
     const customerName = session.metadata?.name || 'Guest';
     const customerEmail = session.customer_email || session.metadata?.email || '';
+    
+    // Calculate room rate and move-in fee breakdown
+    const roomRate = plan === 'weekly' ? 250 : 800; // $250 or $800
+    const moveInFee = 100; // $100
+    const totalExpected = roomRate + moveInFee;
 
     return new Response(JSON.stringify({
       amount,
@@ -38,7 +43,12 @@ export async function GET(req) {
       customerName,
       customerEmail,
       paymentStatus: session.payment_status,
-      sessionId: session.id
+      sessionId: session.id,
+      breakdown: {
+        roomRate: roomRate,
+        moveInFee: moveInFee,
+        total: totalExpected
+      }
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
