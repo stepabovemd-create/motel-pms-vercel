@@ -15,14 +15,9 @@ export default function MiamiApply() {
   // Load Stripe Identity SDK
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
+    script.src = 'https://js.stripe.com/identity/v1/identity.js';
     script.onload = () => {
-      console.log('Stripe SDK loaded');
-      // Initialize Stripe
-      if (window.Stripe && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-        window.stripeInstance = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-        console.log('Stripe initialized');
-      }
+      console.log('Stripe Identity SDK loaded');
     };
     document.head.appendChild(script);
     
@@ -158,10 +153,10 @@ export default function MiamiApply() {
       console.log('Stripe Identity session created:', json);
       
       // Launch Stripe Identity verification
-      if (window.stripeInstance && json.client_secret) {
+      if (window.StripeIdentity && json.client_secret) {
         console.log('Starting Stripe Identity verification with client_secret:', json.client_secret);
         
-        window.stripeInstance.identity.verifyIdentity(json.client_secret).then((result) => {
+        window.StripeIdentity.verifyIdentity(json.client_secret).then((result) => {
           console.log('Stripe Identity result:', result);
           if (result.error) {
             console.error('Stripe Identity error:', result.error);
@@ -175,10 +170,10 @@ export default function MiamiApply() {
           setErrors(['Failed to start identity verification: ' + error.message]);
         });
       } else {
-        console.error('Stripe not initialized or missing client_secret');
-        console.log('window.stripeInstance:', window.stripeInstance);
+        console.error('Stripe Identity not loaded or missing client_secret');
+        console.log('window.StripeIdentity:', window.StripeIdentity);
         console.log('client_secret:', json.client_secret);
-        setErrors(['Stripe Identity not properly initialized']);
+        setErrors(['Stripe Identity SDK not loaded. Please refresh the page and try again.']);
       }
       
     } catch (error) {
