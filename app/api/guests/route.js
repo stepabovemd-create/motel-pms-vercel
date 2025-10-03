@@ -3,13 +3,26 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
 );
 
 // GET - Check if guest exists and get their info
 export async function GET(req) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Supabase not configured, returning mock data');
+      return new Response(JSON.stringify({ 
+        exists: false,
+        isNewGuest: true,
+        message: 'Database not configured - treating as new guest'
+      }), { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
     
@@ -85,6 +98,19 @@ export async function GET(req) {
 // POST - Create or update guest record
 export async function POST(req) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Supabase not configured, skipping guest save');
+      return new Response(JSON.stringify({ 
+        success: true,
+        isNewGuest: true,
+        message: 'Database not configured - guest data not saved'
+      }), { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const { email, name, plan, paymentAmount, sessionId } = await req.json();
     
     console.log('POST /api/guests - Data:', { email, name, plan, paymentAmount, sessionId });

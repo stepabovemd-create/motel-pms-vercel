@@ -3,13 +3,24 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
 );
 
 // GET - Get payment history for a guest
 export async function GET(req) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Supabase not configured, returning no data');
+      return new Response(JSON.stringify({ 
+        error: 'Database not configured'
+      }), { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
     
