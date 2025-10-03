@@ -14,15 +14,36 @@ export async function POST(req) {
     const description = plan === 'weekly' ? 'Weekly Room Rate' : 'Monthly Room Rate';
     const moveInFee = 10000; // $100.00 in cents
 
-    // Check if this is a new guest
+    // Check if this is a new guest by querying Supabase directly
     let isNewGuest = true;
-    try {
-      const guestCheckResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/guests?email=${encodeURIComponent(email)}`);
-      const guestData = await guestCheckResponse.json();
-      isNewGuest = guestData.isNewGuest;
-    } catch (error) {
-      console.error('Error checking guest status:', error);
-      // Default to new guest if check fails
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        
+        const { data: guest, error } = await supabase
+          .from('guests')
+          .select('*')
+          .eq('email', email.toLowerCase())
+          .single();
+        
+        console.log('Guest check result:', { guest, error });
+        
+        if (guest && !error) {
+          isNewGuest = false; // Guest exists, no move-in fee
+          console.log('Existing guest found, no move-in fee');
+        } else {
+          isNewGuest = true; // Guest doesn't exist, charge move-in fee
+          console.log('New guest, will charge move-in fee');
+        }
+      } catch (error) {
+        console.error('Error checking guest status:', error);
+        // Default to new guest if check fails
+        isNewGuest = true;
+      }
     }
 
     const origin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
