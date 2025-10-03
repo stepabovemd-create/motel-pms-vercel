@@ -1,27 +1,13 @@
-import fs from 'fs';
-import path from 'path';
-
 export const dynamic = 'force-dynamic';
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'guests.json');
-
-// Ensure data directory exists
-function ensureDataDirectory() {
-  const dataDir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-}
+// Simple in-memory store for guests (use database in production)
+// This will reset on each deployment, but works for testing
+const guestsStore = new Map();
 
 // Load guests data
 function loadGuests() {
-  ensureDataDirectory();
-  if (!fs.existsSync(DATA_FILE)) {
-    return [];
-  }
   try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(data);
+    return Array.from(guestsStore.values());
   } catch (error) {
     console.error('Error loading guests data:', error);
     return [];
@@ -30,9 +16,12 @@ function loadGuests() {
 
 // Save guests data
 function saveGuests(guests) {
-  ensureDataDirectory();
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(guests, null, 2));
+    guestsStore.clear();
+    guests.forEach(guest => {
+      guestsStore.set(guest.email.toLowerCase(), guest);
+    });
+    console.log('Guests saved:', guestsStore.size);
   } catch (error) {
     console.error('Error saving guests data:', error);
   }
@@ -44,6 +33,8 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
     
+    console.log('GET /api/guests - Email:', email);
+    
     if (!email) {
       return new Response(JSON.stringify({ error: 'Email required' }), { 
         status: 400,
@@ -52,7 +43,11 @@ export async function GET(req) {
     }
 
     const guests = loadGuests();
+    console.log('Loaded guests:', guests.length);
+    console.log('All guests:', guests);
+    
     const guest = guests.find(g => g.email.toLowerCase() === email.toLowerCase());
+    console.log('Found guest:', guest);
     
     if (!guest) {
       return new Response(JSON.stringify({ 
@@ -94,6 +89,8 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const { email, name, plan, paymentAmount, sessionId } = await req.json();
+    
+    console.log('POST /api/guests - Data:', { email, name, plan, paymentAmount, sessionId });
     
     if (!email || !name || !plan) {
       return new Response(JSON.stringify({ error: 'Email, name, and plan required' }), { 

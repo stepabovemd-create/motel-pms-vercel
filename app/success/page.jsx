@@ -23,6 +23,26 @@ export default function SuccessPage() {
       const res = await fetch(`/api/payment-details?session_id=${sessionId}`);
       const data = await res.json();
       setPaymentData(data);
+      
+      // Save guest data after successful payment
+      if (data.customerEmail && data.customerName && data.plan) {
+        try {
+          await fetch('/api/guests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: data.customerEmail,
+              name: data.customerName,
+              plan: data.plan,
+              paymentAmount: data.amount,
+              sessionId: sessionId
+            })
+          });
+          console.log('Guest data saved successfully');
+        } catch (error) {
+          console.error('Failed to save guest data:', error);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch payment details:', error);
     } finally {
