@@ -78,6 +78,18 @@ export default function MiamiLanding() {
               border: 'none',
               display: 'inline-block'
             }}>Apply / Manage & Pay</Link>
+            <Link href="/customer-portal" style={{ 
+              background: 'transparent', 
+              color: '#fff', 
+              padding: '16px 32px', 
+              borderRadius: 12, 
+              textDecoration: 'none', 
+              border: '2px solid rgba(255,255,255,0.3)',
+              fontWeight: 600,
+              fontSize: 16,
+              transition: 'all 0.3s ease',
+              display: 'inline-block'
+            }}>Customer Portal</Link>
             <a href="#amenities" style={{ 
               background: 'transparent', 
               color: '#fff', 

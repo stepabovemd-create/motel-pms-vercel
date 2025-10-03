@@ -14,9 +14,20 @@ export async function POST(req) {
     const description = plan === 'weekly' ? 'Weekly Room Rate' : 'Monthly Room Rate';
     const moveInFee = 10000; // $100.00 in cents
 
+    // Check if this is a new guest
+    let isNewGuest = true;
+    try {
+      const guestCheckResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/guests?email=${encodeURIComponent(email)}`);
+      const guestData = await guestCheckResponse.json();
+      isNewGuest = guestData.isNewGuest;
+    } catch (error) {
+      console.error('Error checking guest status:', error);
+      // Default to new guest if check fails
+    }
+
     const origin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
     
-    // Create line items including move-in fee
+    // Create line items - only include move-in fee for new guests
     const lineItems = [
       { 
         price_data: { 
@@ -25,16 +36,20 @@ export async function POST(req) {
           unit_amount: price 
         }, 
         quantity: 1 
-      },
-      { 
+      }
+    ];
+
+    // Add move-in fee only for new guests
+    if (isNewGuest) {
+      lineItems.push({
         price_data: { 
           currency: 'usd', 
           product_data: { name: 'Move-in Fee' }, 
           unit_amount: moveInFee 
         }, 
         quantity: 1 
-      }
-    ];
+      });
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -43,7 +58,7 @@ export async function POST(req) {
       line_items: lineItems,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/miami/apply`,
-      metadata: { plan, name, email, moveInFee: '10000' },
+      metadata: { plan, name, email, isNewGuest: isNewGuest.toString(), moveInFee: isNewGuest ? '10000' : '0' },
       // Enable identity verification
       payment_intent_data: {
         setup_future_usage: 'off_session',
