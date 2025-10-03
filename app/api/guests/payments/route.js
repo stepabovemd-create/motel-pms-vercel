@@ -38,7 +38,28 @@ export async function GET(req) {
       .eq('email', email.toLowerCase())
       .single();
 
-    if (guestError || !guest) {
+    console.log('Guest query result:', { guest, guestError });
+
+    if (guestError) {
+      if (guestError.code === 'PGRST116') {
+        // No rows found
+        return new Response(JSON.stringify({ error: 'Guest not found' }), { 
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } else {
+        console.error('Supabase error:', guestError);
+        return new Response(JSON.stringify({ 
+          error: 'Database error',
+          details: guestError.message
+        }), { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    if (!guest) {
       return new Response(JSON.stringify({ error: 'Guest not found' }), { 
         status: 404,
         headers: { 'Content-Type': 'application/json' }
