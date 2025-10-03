@@ -1,31 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
+
 export const dynamic = 'force-dynamic';
 
-// Simple in-memory store for guests (use database in production)
-// This will reset on each deployment, but works for testing
-const guestsStore = new Map();
-
-// Load guests data
-function loadGuests() {
-  try {
-    return Array.from(guestsStore.values());
-  } catch (error) {
-    console.error('Error loading guests data:', error);
-    return [];
-  }
-}
-
-// Save guests data
-function saveGuests(guests) {
-  try {
-    guestsStore.clear();
-    guests.forEach(guest => {
-      guestsStore.set(guest.email.toLowerCase(), guest);
-    });
-    console.log('Guests saved:', guestsStore.size);
-  } catch (error) {
-    console.error('Error saving guests data:', error);
-  }
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // GET - Check if guest exists and get their info
 export async function GET(req) {
@@ -42,13 +22,23 @@ export async function GET(req) {
       });
     }
 
-    const guests = loadGuests();
-    console.log('Loaded guests:', guests.length);
-    console.log('All guests:', guests);
-    
-    const guest = guests.find(g => g.email.toLowerCase() === email.toLowerCase());
-    console.log('Found guest:', guest);
-    
+    // Query Supabase for guest
+    const { data: guest, error } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    console.log('Supabase query result:', { guest, error });
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Supabase error:', error);
+      return new Response(JSON.stringify({ error: 'Database error' }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     if (!guest) {
       return new Response(JSON.stringify({ 
         exists: false,
@@ -59,17 +49,24 @@ export async function GET(req) {
       });
     }
 
+    // Get payment count
+    const { count } = await supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('guest_id', guest.id);
+
     return new Response(JSON.stringify({
       exists: true,
       isNewGuest: false,
       guest: {
+        id: guest.id,
         email: guest.email,
         name: guest.name,
-        firstPaymentDate: guest.firstPaymentDate,
-        lastPaymentDate: guest.lastPaymentDate,
-        totalPayments: guest.payments?.length || 0,
-        currentPlan: guest.currentPlan,
-        nextPaymentDue: guest.nextPaymentDue
+        firstPaymentDate: guest.first_payment_date,
+        lastPaymentDate: guest.last_payment_date,
+        totalPayments: count || 0,
+        currentPlan: guest.current_plan,
+        nextPaymentDue: guest.next_payment_due
       }
     }), { 
       status: 200,
@@ -99,63 +96,96 @@ export async function POST(req) {
       });
     }
 
-    const guests = loadGuests();
-    const existingGuestIndex = guests.findIndex(g => g.email.toLowerCase() === email.toLowerCase());
-    
-    const paymentRecord = {
-      date: new Date().toISOString(),
-      amount: paymentAmount,
-      plan: plan,
-      sessionId: sessionId
-    };
-
-    if (existingGuestIndex >= 0) {
-      // Update existing guest
-      const guest = guests[existingGuestIndex];
-      guest.lastPaymentDate = new Date().toISOString();
-      guest.currentPlan = plan;
-      guest.payments = guest.payments || [];
-      guest.payments.push(paymentRecord);
-      
-      // Calculate next payment due date
-      const nextPaymentDate = new Date();
-      if (plan === 'weekly') {
-        nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
-      } else {
-        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-      }
-      guest.nextPaymentDue = nextPaymentDate.toISOString();
-      
-      guests[existingGuestIndex] = guest;
+    // Calculate next payment due date
+    const nextPaymentDate = new Date();
+    if (plan === 'weekly') {
+      nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
     } else {
-      // Create new guest
-      const newGuest = {
-        email: email.toLowerCase(),
-        name: name,
-        firstPaymentDate: new Date().toISOString(),
-        lastPaymentDate: new Date().toISOString(),
-        currentPlan: plan,
-        payments: [paymentRecord],
-        createdAt: new Date().toISOString()
-      };
-      
-      // Calculate next payment due date
-      const nextPaymentDate = new Date();
-      if (plan === 'weekly') {
-        nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
-      } else {
-        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-      }
-      newGuest.nextPaymentDue = nextPaymentDate.toISOString();
-      
-      guests.push(newGuest);
+      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
     }
 
-    saveGuests(guests);
+    // Check if guest exists
+    const { data: existingGuest } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    let guestId;
+    let isNewGuest = false;
+
+    if (existingGuest) {
+      // Update existing guest
+      const { data, error } = await supabase
+        .from('guests')
+        .update({
+          last_payment_date: new Date().toISOString(),
+          current_plan: plan,
+          next_payment_due: nextPaymentDate.toISOString()
+        })
+        .eq('email', email.toLowerCase())
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating guest:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update guest' }), { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      guestId = data.id;
+    } else {
+      // Create new guest
+      const { data, error } = await supabase
+        .from('guests')
+        .insert({
+          email: email.toLowerCase(),
+          name: name,
+          first_payment_date: new Date().toISOString(),
+          last_payment_date: new Date().toISOString(),
+          current_plan: plan,
+          next_payment_due: nextPaymentDate.toISOString(),
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating guest:', error);
+        return new Response(JSON.stringify({ error: 'Failed to create guest' }), { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      guestId = data.id;
+      isNewGuest = true;
+    }
+
+    // Add payment record
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        guest_id: guestId,
+        amount: paymentAmount,
+        plan: plan,
+        session_id: sessionId,
+        payment_date: new Date().toISOString()
+      });
+
+    if (paymentError) {
+      console.error('Error creating payment record:', paymentError);
+      return new Response(JSON.stringify({ error: 'Failed to save payment record' }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     
     return new Response(JSON.stringify({ 
       success: true,
-      isNewGuest: existingGuestIndex < 0
+      isNewGuest: isNewGuest
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }

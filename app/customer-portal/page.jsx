@@ -23,16 +23,21 @@ export default function CustomerPortal() {
     setError('');
 
     try {
-      const response = await fetch(`/api/guests?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`/api/guests/payments?email=${encodeURIComponent(email)}`);
       const data = await response.json();
 
-      if (response.ok && data.exists) {
-        setGuestData(data.guest);
+      if (response.ok && data.guest) {
+        setGuestData({
+          ...data.guest,
+          payments: data.payments,
+          totalPayments: data.payments.length
+        });
         setIsLoggedIn(true);
       } else {
         setError('No payment history found for this email address. Please use the application form to make your first payment.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Failed to load your account. Please try again.');
     } finally {
       setLoading(false);
