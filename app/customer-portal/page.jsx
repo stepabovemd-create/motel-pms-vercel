@@ -23,16 +23,24 @@ export default function CustomerPortal() {
     setError('');
 
     try {
+      console.log('Fetching guest data for:', email);
       const response = await fetch(`/api/guests/payments?email=${encodeURIComponent(email)}`);
       const data = await response.json();
+      
+      console.log('API response:', data);
 
       if (response.ok && data.guest) {
         setGuestData({
           ...data.guest,
-          payments: data.payments,
-          totalPayments: data.payments.length
+          payments: data.payments || [],
+          totalPayments: (data.payments || []).length
         });
         setIsLoggedIn(true);
+        console.log('Guest data set:', {
+          ...data.guest,
+          payments: data.payments || [],
+          totalPayments: (data.payments || []).length
+        });
       } else {
         setError('No payment history found for this email address. Please use the application form to make your first payment.');
       }

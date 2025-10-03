@@ -73,6 +73,8 @@ export async function GET(req) {
       .eq('guest_id', guest.id)
       .order('payment_date', { ascending: false });
 
+    console.log('Payments query result:', { payments, paymentsError });
+
     if (paymentsError) {
       console.error('Error fetching payments:', paymentsError);
       return new Response(JSON.stringify({ error: 'Failed to fetch payments' }), { 
@@ -81,7 +83,7 @@ export async function GET(req) {
       });
     }
 
-    return new Response(JSON.stringify({
+    const responseData = {
       guest: {
         id: guest.id,
         email: guest.email,
@@ -92,7 +94,11 @@ export async function GET(req) {
         nextPaymentDue: guest.next_payment_due
       },
       payments: payments || []
-    }), { 
+    };
+
+    console.log('Returning response data:', responseData);
+
+    return new Response(JSON.stringify(responseData), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
