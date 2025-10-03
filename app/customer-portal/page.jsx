@@ -7,6 +7,9 @@ export default function CustomerPortal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [customAmount, setCustomAmount] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const colors = { 
     primary: '#dc2626', 
@@ -52,17 +55,28 @@ export default function CustomerPortal() {
     }
   }
 
-  async function handlePayment() {
+  async function handlePayment(amount = null) {
     if (!guestData) return;
     
+    setPaymentLoading(true);
+    setError('');
+    
     try {
+      const paymentAmount = amount || customAmount;
+      if (!paymentAmount || isNaN(parseFloat(paymentAmount))) {
+        setError('Please enter a valid payment amount.');
+        setPaymentLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/checkout/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: guestData.email,
           name: guestData.name,
-          plan: guestData.currentPlan
+          plan: guestData.currentPlan,
+          customAmount: parseFloat(paymentAmount)
         })
       });
 
@@ -74,16 +88,26 @@ export default function CustomerPortal() {
       }
     } catch (err) {
       setError('Failed to start payment process. Please try again.');
+    } finally {
+      setPaymentLoading(false);
     }
   }
 
   function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return 'No date';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'Invalid date';
+    }
   }
 
   function formatCurrency(amount) {
@@ -269,6 +293,18 @@ export default function CustomerPortal() {
                   <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>Total Payments</div>
                   <div style={{ fontSize: 18, fontWeight: 700 }}>{guestData.totalPayments}</div>
                 </div>
+                <div>
+                  <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>
+                    {guestData.accountBalance >= 0 ? 'Account Credit' : 'Balance Due'}
+                  </div>
+                  <div style={{ 
+                    fontSize: 18, 
+                    fontWeight: 700,
+                    color: guestData.accountBalance >= 0 ? '#166534' : '#dc2626'
+                  }}>
+                    {formatCurrency(Math.abs(guestData.accountBalance) / 100)}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -286,7 +322,7 @@ export default function CustomerPortal() {
                 fontSize: 24,
                 fontWeight: 700,
                 marginBottom: 16
-              }}>Next Payment Due</h3>
+              }}>Make a Payment</h3>
               <p style={{ 
                 color: '#92400e', 
                 margin: 0,
@@ -298,23 +334,93 @@ export default function CustomerPortal() {
                 </strong> is due on{' '}
                 <strong>{formatDate(guestData.nextPaymentDue)}</strong>
               </p>
-              <button 
-                onClick={handlePayment}
-                style={{ 
-                  background: colors.primary, 
-                  color: '#fff', 
-                  padding: '16px 32px', 
-                  borderRadius: 12, 
-                  fontWeight: 700,
-                  fontSize: 16,
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  marginTop: 16
-                }}
-              >
-                Pay Now
-              </button>
+              
+              <div style={{ marginTop: 20, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => handlePayment(guestData.currentPlan === 'weekly' ? 250 : 800)}
+                  disabled={paymentLoading}
+                  style={{ 
+                    background: paymentLoading ? '#9ca3af' : colors.primary, 
+                    color: '#fff', 
+                    padding: '12px 24px', 
+                    borderRadius: 8, 
+                    fontWeight: 600,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: paymentLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Pay Full Amount ({formatCurrency(guestData.currentPlan === 'weekly' ? 250 : 800)})
+                </button>
+                
+                <button 
+                  onClick={() => setShowPaymentForm(!showPaymentForm)}
+                  style={{ 
+                    background: 'transparent', 
+                    color: '#92400e', 
+                    padding: '12px 24px', 
+                    borderRadius: 8, 
+                    fontWeight: 600,
+                    fontSize: 14,
+                    border: '2px solid #f59e0b',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Custom Amount
+                </button>
+              </div>
+
+              {showPaymentForm && (
+                <div style={{ 
+                  marginTop: 20, 
+                  padding: 20, 
+                  background: '#fef7cd', 
+                  borderRadius: 8,
+                  border: '1px solid #f59e0b'
+                }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#92400e', fontSize: 16 }}>
+                    Enter Custom Payment Amount
+                  </h4>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <span style={{ color: '#92400e', fontWeight: 600 }}>$</span>
+                    <input 
+                      type="number"
+                      value={customAmount}
+                      onChange={e => setCustomAmount(e.target.value)}
+                      placeholder="0.00"
+                      style={{
+                        border: '2px solid #f59e0b',
+                        borderRadius: 6,
+                        padding: '8px 12px',
+                        fontSize: 16,
+                        width: 120
+                      }}
+                    />
+                    <button 
+                      onClick={() => handlePayment()}
+                      disabled={paymentLoading || !customAmount}
+                      style={{ 
+                        background: (paymentLoading || !customAmount) ? '#9ca3af' : colors.primary, 
+                        color: '#fff', 
+                        padding: '8px 16px', 
+                        borderRadius: 6, 
+                        fontWeight: 600,
+                        fontSize: 14,
+                        border: 'none',
+                        cursor: (paymentLoading || !customAmount) ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {paymentLoading ? 'Processing...' : 'Pay Now'}
+                    </button>
+                  </div>
+                  <p style={{ margin: '8px 0 0 0', fontSize: 12, color: '#92400e', opacity: 0.8 }}>
+                    Pay more for credit, or pay less (you'll carry a balance)
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Payment History */}
@@ -347,7 +453,10 @@ export default function CustomerPortal() {
                         {formatCurrency(payment.amount)} - {payment.plan === 'weekly' ? 'Weekly' : 'Monthly'}
                       </div>
                       <div style={{ fontSize: 14, color: colors.muted }}>
-                        {formatDate(payment.date)}
+                        {formatDate(payment.payment_date)}
+                      </div>
+                      <div style={{ fontSize: 12, color: colors.muted }}>
+                        Session: {payment.session_id?.slice(-8) || 'N/A'}
                       </div>
                     </div>
                     <div style={{ 

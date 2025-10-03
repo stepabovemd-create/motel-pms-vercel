@@ -6,12 +6,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '20
 
 export async function POST(req) {
   try {
-    const { email, name, plan } = await req.json();
+    const { email, name, plan, customAmount } = await req.json();
     if (!email || !name || !plan) return new Response(JSON.stringify({ error: 'email, name, and plan required' }), { status: 400 });
     if (!['weekly', 'monthly'].includes(plan)) return new Response(JSON.stringify({ error: 'Invalid plan' }), { status: 400 });
 
-    const price = plan === 'weekly' ? 25000 : 80000;
-    const description = plan === 'weekly' ? 'Weekly Room Rate' : 'Monthly Room Rate';
+    const standardPrice = plan === 'weekly' ? 25000 : 80000;
+    const price = customAmount ? Math.round(customAmount * 100) : standardPrice; // Convert to cents
+    const description = customAmount ? `Custom Payment - ${plan === 'weekly' ? 'Weekly' : 'Monthly'} Plan` : (plan === 'weekly' ? 'Weekly Room Rate' : 'Monthly Room Rate');
     const moveInFee = 10000; // $100.00 in cents
 
     // Check if this is a new guest by querying Supabase directly
@@ -72,14 +73,22 @@ export async function POST(req) {
       });
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      customer_email: email,
-      line_items: lineItems,
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/miami/apply`,
-      metadata: { plan, name, email, isNewGuest: isNewGuest.toString(), moveInFee: isNewGuest ? '10000' : '0' },
+            const session = await stripe.checkout.sessions.create({
+              mode: 'payment',
+              payment_method_types: ['card'],
+              customer_email: email,
+              line_items: lineItems,
+              success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${origin}/miami/apply`,
+              metadata: { 
+                plan, 
+                name, 
+                email, 
+                isNewGuest: isNewGuest.toString(), 
+                moveInFee: isNewGuest ? '10000' : '0',
+                customAmount: customAmount ? (customAmount * 100).toString() : '0',
+                standardPrice: standardPrice.toString()
+              },
       // Enable identity verification
       payment_intent_data: {
         setup_future_usage: 'off_session',

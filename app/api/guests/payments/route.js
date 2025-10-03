@@ -83,6 +83,17 @@ export async function GET(req) {
       });
     }
 
+    // Get account balance for this guest
+    const { data: balanceData, error: balanceError } = await supabase
+      .from('account_balances')
+      .select('balance_cents')
+      .eq('guest_id', guest.id)
+      .single();
+
+    console.log('Balance query result:', { balanceData, balanceError });
+
+    const currentBalance = balanceData?.balance_cents || 0;
+
     const responseData = {
       guest: {
         id: guest.id,
@@ -91,7 +102,8 @@ export async function GET(req) {
         firstPaymentDate: guest.first_payment_date,
         lastPaymentDate: guest.last_payment_date,
         currentPlan: guest.current_plan,
-        nextPaymentDue: guest.next_payment_due
+        nextPaymentDue: guest.next_payment_due,
+        accountBalance: currentBalance
       },
       payments: payments || []
     };
