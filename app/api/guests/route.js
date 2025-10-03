@@ -195,7 +195,7 @@ export async function POST(req) {
       .from('payments')
       .insert({
         guest_id: guestId,
-        amount: paymentAmount,
+        amount: Math.round(paymentAmount * 100), // Convert to cents
         plan: plan,
         session_id: sessionId,
         payment_date: new Date().toISOString()
@@ -207,6 +207,21 @@ export async function POST(req) {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
+    }
+
+    // Update account balance manually
+    try {
+      const { error: balanceError } = await supabase.rpc('update_guest_balance', {
+        target_guest_id: guestId
+      });
+      
+      if (balanceError) {
+        console.error('Error updating balance:', balanceError);
+      } else {
+        console.log('Balance updated successfully for guest:', guestId);
+      }
+    } catch (balanceError) {
+      console.error('Error calling balance update function:', balanceError);
     }
     
     return new Response(JSON.stringify({ 
