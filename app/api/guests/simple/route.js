@@ -65,14 +65,15 @@ export async function GET(req) {
     const nextDueDate = new Date(moveInDate);
     nextDueDate.setDate(nextDueDate.getDate() + 7);
 
-    // Simple balance: if they paid $350, they have a $100 credit toward next $250
+    // Simple balance: $350 payment covers first week completely (250 + 100 move-in fee)
     let accountBalance = 0;
     let nextPaymentAmount = 25000; // $250
 
     if (totalPaid >= 35000) {
-      // They paid the move-in fee, so they have $100 credit toward next payment
-      accountBalance = 10000; // $100 credit
-      nextPaymentAmount = 15000; // $150 ($250 - $100 credit)
+      // They paid the first week completely ($250 + $100 move-in fee)
+      // No credit or debt - they're square for the first week
+      accountBalance = 0; // $0 balance
+      nextPaymentAmount = 25000; // $250 for next week
     }
 
     const responseData = {
