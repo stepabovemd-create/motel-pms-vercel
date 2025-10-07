@@ -87,35 +87,87 @@ export async function GET(req) {
     const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
     const paymentsCount = payments.length;
     
-    // Calculate expected amount based on your scenario:
-    // Payment 1: $350 ($250 + $100 move-in fee)
-    // Payments 2+: $250 each (weekly) or $800 each (monthly)
+    // Calculate expected amount based on COMPLETE periods only
+    // This handles partial payments correctly
     let totalExpected = 0;
+    const standardWeeklyRate = 25000; // $250 in cents
+    const standardMonthlyRate = 80000; // $800 in cents
+    const moveInFee = 10000; // $100 in cents
+
     if (guest.current_plan === 'weekly') {
       if (paymentsCount === 0) {
         totalExpected = 0;
-      } else if (paymentsCount === 1) {
-        totalExpected = 35000; // $350 (250 + 100 move-in)
       } else {
-        totalExpected = 35000 + ((paymentsCount - 1) * 25000); // $350 + ($250 * remaining)
+        // Calculate how many COMPLETE periods have been paid
+        let completePeriods = 0;
+        let runningTotal = 0;
+        
+        // First payment should be $350 (including move-in fee)
+        if (totalPaid >= (standardWeeklyRate + moveInFee)) {
+          completePeriods = 1;
+          runningTotal = standardWeeklyRate + moveInFee;
+        }
+        
+        // Additional complete periods at $250 each
+        if (completePeriods > 0) {
+          const remainingPayments = totalPaid - runningTotal;
+          const additionalCompletePeriods = Math.floor(remainingPayments / standardWeeklyRate);
+          completePeriods += additionalCompletePeriods;
+          runningTotal += (additionalCompletePeriods * standardWeeklyRate);
+        }
+        
+        totalExpected = runningTotal;
       }
     } else { // monthly
       if (paymentsCount === 0) {
         totalExpected = 0;
-      } else if (paymentsCount === 1) {
-        totalExpected = 90000; // $900 (800 + 100 move-in)
       } else {
-        totalExpected = 90000 + ((paymentsCount - 1) * 80000); // $900 + ($800 * remaining)
+        // Calculate how many COMPLETE periods have been paid
+        let completePeriods = 0;
+        let runningTotal = 0;
+        
+        // First payment should be $900 (including move-in fee)
+        if (totalPaid >= (standardMonthlyRate + moveInFee)) {
+          completePeriods = 1;
+          runningTotal = standardMonthlyRate + moveInFee;
+        }
+        
+        // Additional complete periods at $800 each
+        if (completePeriods > 0) {
+          const remainingPayments = totalPaid - runningTotal;
+          const additionalCompletePeriods = Math.floor(remainingPayments / standardMonthlyRate);
+          completePeriods += additionalCompletePeriods;
+          runningTotal += (additionalCompletePeriods * standardMonthlyRate);
+        }
+        
+        totalExpected = runningTotal;
       }
     }
     
     const currentBalance = totalPaid - totalExpected;
     
+    // Calculate complete periods for debugging
+    let completePeriods = 0;
+    if (guest.current_plan === 'weekly') {
+      if (totalExpected >= (standardWeeklyRate + moveInFee)) {
+        completePeriods = 1;
+        const additionalPeriods = Math.floor((totalExpected - (standardWeeklyRate + moveInFee)) / standardWeeklyRate);
+        completePeriods += additionalPeriods;
+      }
+    } else {
+      if (totalExpected >= (standardMonthlyRate + moveInFee)) {
+        completePeriods = 1;
+        const additionalPeriods = Math.floor((totalExpected - (standardMonthlyRate + moveInFee)) / standardMonthlyRate);
+        completePeriods += additionalPeriods;
+      }
+    }
+
     console.log('Direct balance calculation:', { 
       totalPaid, 
       paymentsCount, 
       totalExpected, 
       currentBalance,
+      completePeriods,
       totalPaidDollars: totalPaid / 100,
       totalExpectedDollars: totalExpected / 100,
       balanceDollars: currentBalance / 100
@@ -129,14 +181,34 @@ export async function GET(req) {
       nextPaymentAmount = Math.max(0, 80000 - currentBalance); // $800 - credit/debt
     }
 
-    // Calculate correct next payment due date
-    // Should be: first payment date + (number of payments * 1 week)
+    // Calculate correct next payment due date based on COMPLETE periods
     let correctNextDueDate = guest.next_payment_due;
     if (payments.length > 0) {
       const firstPaymentDate = new Date(guest.first_payment_date);
-      const weeksPaid = payments.length;
+      
+      // Calculate complete periods based on total expected amount
+      let completePeriods = 0;
+      if (guest.current_plan === 'weekly') {
+        if (totalExpected >= (standardWeeklyRate + moveInFee)) {
+          completePeriods = 1; // First period (including move-in fee)
+          const additionalPeriods = Math.floor((totalExpected - (standardWeeklyRate + moveInFee)) / standardWeeklyRate);
+          completePeriods += additionalPeriods;
+        }
+      } else {
+        if (totalExpected >= (standardMonthlyRate + moveInFee)) {
+          completePeriods = 1; // First period (including move-in fee)
+          const additionalPeriods = Math.floor((totalExpected - (standardMonthlyRate + moveInFee)) / standardMonthlyRate);
+          completePeriods += additionalPeriods;
+        }
+      }
+      
+      // Next due date = first payment date + complete periods + 1
       const nextDueDate = new Date(firstPaymentDate);
-      nextDueDate.setDate(nextDueDate.getDate() + (weeksPaid * 7));
+      if (guest.current_plan === 'weekly') {
+        nextDueDate.setDate(nextDueDate.getDate() + ((completePeriods + 1) * 7));
+      } else {
+        nextDueDate.setMonth(nextDueDate.getMonth() + (completePeriods + 1));
+      }
       correctNextDueDate = nextDueDate.toISOString();
     }
 
