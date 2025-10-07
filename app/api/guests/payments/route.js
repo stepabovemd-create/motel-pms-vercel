@@ -83,16 +83,43 @@ export async function GET(req) {
       });
     }
 
-    // Get account balance for this guest
-    const { data: balanceData, error: balanceError } = await supabase
-      .from('account_balances')
-      .select('balance_cents')
-      .eq('guest_id', guest.id)
-      .single();
-
-    console.log('Balance query result:', { balanceData, balanceError });
-
-    const currentBalance = balanceData?.balance_cents || 0;
+    // Calculate balance directly from payments (more reliable than database table)
+    const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const paymentsCount = payments.length;
+    
+    // Calculate expected amount based on your scenario:
+    // Payment 1: $350 ($250 + $100 move-in fee)
+    // Payments 2+: $250 each (weekly) or $800 each (monthly)
+    let totalExpected = 0;
+    if (guest.current_plan === 'weekly') {
+      if (paymentsCount === 0) {
+        totalExpected = 0;
+      } else if (paymentsCount === 1) {
+        totalExpected = 35000; // $350 (250 + 100 move-in)
+      } else {
+        totalExpected = 35000 + ((paymentsCount - 1) * 25000); // $350 + ($250 * remaining)
+      }
+    } else { // monthly
+      if (paymentsCount === 0) {
+        totalExpected = 0;
+      } else if (paymentsCount === 1) {
+        totalExpected = 90000; // $900 (800 + 100 move-in)
+      } else {
+        totalExpected = 90000 + ((paymentsCount - 1) * 80000); // $900 + ($800 * remaining)
+      }
+    }
+    
+    const currentBalance = totalPaid - totalExpected;
+    
+    console.log('Direct balance calculation:', { 
+      totalPaid, 
+      paymentsCount, 
+      totalExpected, 
+      currentBalance,
+      totalPaidDollars: totalPaid / 100,
+      totalExpectedDollars: totalExpected / 100,
+      balanceDollars: currentBalance / 100
+    });
 
     // Calculate next payment amount considering credit/debt
     let nextPaymentAmount = 0;
