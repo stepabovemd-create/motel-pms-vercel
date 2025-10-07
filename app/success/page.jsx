@@ -7,6 +7,7 @@ export default function SuccessPage() {
   const [loading, setLoading] = React.useState(true);
   const [paymentCount, setPaymentCount] = React.useState(1);
   const [nextPaymentAmount, setNextPaymentAmount] = React.useState(250);
+  const [nextPaymentDue, setNextPaymentDue] = React.useState(null);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -56,6 +57,7 @@ export default function SuccessPage() {
                     });
                     setPaymentCount(guestData.payments.length);
                     setNextPaymentAmount(guestData.guest.nextPaymentAmount / 100);
+                    setNextPaymentDue(guestData.guest.nextPaymentDue);
                   }
                 } catch (error) {
                   console.error('Failed to save guest data:', error);
@@ -68,28 +70,15 @@ export default function SuccessPage() {
     }
   }
 
-  function getNextPaymentDate(plan, paymentCount = 1) {
-    // Calculate based on payment history, not just current date
-    const now = new Date();
-    if (plan === 'weekly') {
-      // Add weeks based on how many payments have been made
-      const nextDate = new Date(now.getTime() + (paymentCount * 7 * 24 * 60 * 60 * 1000));
-      return nextDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-    } else {
-      // For monthly, add months based on payment count
-      const nextDate = new Date(now.getFullYear(), now.getMonth() + paymentCount, now.getDate());
-      return nextDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-    }
+  function formatDateFromISO(isoString) {
+    // Format ISO date string to readable format
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   }
 
   const colors = { 
@@ -278,7 +267,7 @@ export default function SuccessPage() {
                 lineHeight: 1.6
               }}>
                 Your next payment of <strong style={{ fontSize: 18 }}>${nextPaymentAmount}</strong> is due on{' '}
-                <strong>{getNextPaymentDate(paymentData.plan, paymentCount)}</strong>
+                <strong>{nextPaymentDue ? formatDateFromISO(nextPaymentDue) : 'Loading...'}</strong>
               </p>
               <p style={{ 
                 color: '#92400e', 
