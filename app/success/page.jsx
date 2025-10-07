@@ -8,6 +8,7 @@ export default function SuccessPage() {
   const [paymentCount, setPaymentCount] = React.useState(1);
   const [nextPaymentAmount, setNextPaymentAmount] = React.useState(250);
   const [nextPaymentDue, setNextPaymentDue] = React.useState(null);
+  const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -30,7 +31,15 @@ export default function SuccessPage() {
               // Save guest data after successful payment
               if (data.customerEmail && data.customerName && data.plan) {
                 try {
-                  await fetch('/api/guests', {
+                  console.log('Saving guest data:', {
+                    email: data.customerEmail,
+                    name: data.customerName,
+                    plan: data.plan,
+                    amount: data.amount,
+                    sessionId: sessionId
+                  });
+                  
+                  const saveResponse = await fetch('/api/guests', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -41,14 +50,30 @@ export default function SuccessPage() {
                       sessionId: sessionId
                     })
                   });
+                  
+                  const saveResult = await saveResponse.json();
+                  console.log('Guest save response:', saveResponse.status, saveResult);
+                  
+                  if (!saveResponse.ok) {
+                    throw new Error(`Failed to save guest data: ${saveResult.error || 'Unknown error'}`);
+                  }
+                  
                   console.log('Guest data saved successfully');
                   
                   // Wait a moment for database to be fully updated
-                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  await new Promise(resolve => setTimeout(resolve, 2000));
                   
                   // Get updated payment count for accurate due date - force fresh data
+                  console.log('Fetching updated guest data...');
                   const guestResponse = await fetch(`/api/guests/payments?email=${encodeURIComponent(data.customerEmail)}&t=${Date.now()}`);
+                  
+                  if (!guestResponse.ok) {
+                    throw new Error(`Failed to fetch guest data: ${guestResponse.status}`);
+                  }
+                  
                   const guestData = await guestResponse.json();
+                  console.log('Updated guest data received:', guestData);
+                  
                   if (guestData.payments && guestData.guest) {
                     console.log('Success page - Updated data:', {
                       paymentCount: guestData.payments.length,
@@ -58,9 +83,13 @@ export default function SuccessPage() {
                     setPaymentCount(guestData.payments.length);
                     setNextPaymentAmount(guestData.guest.nextPaymentAmount / 100);
                     setNextPaymentDue(guestData.guest.nextPaymentDue);
+                  } else {
+                    console.error('Invalid guest data structure:', guestData);
                   }
                 } catch (error) {
-                  console.error('Failed to save guest data:', error);
+                  console.error('Failed to save/fetch guest data:', error);
+                  // Set a flag to show error to user
+                  setError('Payment successful but there was an issue updating your account. Please refresh the page or contact support.');
                 }
               }
     } catch (error) {
@@ -132,11 +161,25 @@ export default function SuccessPage() {
           </div>
         </section>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <p>Loading payment details...</p>
-          </div>
-        ) : sessionId && paymentData ? (
+              {error && (
+                <div style={{ 
+                  background: '#fff1f2', 
+                  padding: 20, 
+                  borderRadius: 12, 
+                  color: '#991b1b', 
+                  border: '1px solid #fecaca',
+                  marginBottom: 24,
+                  boxShadow: '0 1px 3px 0 rgba(0,0,0,0.1)'
+                }}>
+                  <p style={{ margin: 0 }}>{error}</p>
+                </div>
+              )}
+
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: 40 }}>
+                  <p>Loading payment details...</p>
+                </div>
+              ) : sessionId && paymentData ? (
           <div style={{ display: 'grid', gap: 32 }}>
             {/* Payment Confirmation */}
             <div style={{ 
