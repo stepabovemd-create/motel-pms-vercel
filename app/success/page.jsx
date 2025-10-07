@@ -42,10 +42,18 @@ export default function SuccessPage() {
                   });
                   console.log('Guest data saved successfully');
                   
-                  // Get updated payment count for accurate due date
-                  const guestResponse = await fetch(`/api/guests/payments?email=${encodeURIComponent(data.customerEmail)}`);
+                  // Wait a moment for database to be fully updated
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  
+                  // Get updated payment count for accurate due date - force fresh data
+                  const guestResponse = await fetch(`/api/guests/payments?email=${encodeURIComponent(data.customerEmail)}&t=${Date.now()}`);
                   const guestData = await guestResponse.json();
                   if (guestData.payments && guestData.guest) {
+                    console.log('Success page - Updated data:', {
+                      paymentCount: guestData.payments.length,
+                      nextPaymentAmount: guestData.guest.nextPaymentAmount,
+                      nextPaymentDue: guestData.guest.nextPaymentDue
+                    });
                     setPaymentCount(guestData.payments.length);
                     setNextPaymentAmount(guestData.guest.nextPaymentAmount / 100);
                   }

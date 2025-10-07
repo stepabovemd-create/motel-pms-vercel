@@ -66,12 +66,12 @@ export async function GET(req) {
       });
     }
 
-    // Get payments for this guest
+    // Get payments for this guest - force fresh data
     const { data: payments, error: paymentsError } = await supabase
       .from('payments')
       .select('*')
       .eq('guest_id', guest.id)
-      .order('payment_date', { ascending: false });
+      .order('payment_date', { ascending: true }); // Changed to ascending to get chronological order
 
     console.log('Payments query result:', { payments, paymentsError });
 

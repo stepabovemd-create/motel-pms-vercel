@@ -27,7 +27,8 @@ export default function CustomerPortal() {
 
     try {
       console.log('Fetching guest data for:', email);
-      const response = await fetch(`/api/guests/payments?email=${encodeURIComponent(email)}`);
+      // Add cache-busting parameter to force fresh data
+      const response = await fetch(`/api/guests/payments?email=${encodeURIComponent(email)}&t=${Date.now()}`);
       const data = await response.json();
       
       console.log('=== CUSTOMER PORTAL DEBUG ===');
