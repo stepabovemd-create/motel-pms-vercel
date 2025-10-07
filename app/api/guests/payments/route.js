@@ -144,7 +144,14 @@ export async function GET(req) {
       payments: payments || []
     };
 
+    console.log('=== API RESPONSE DEBUG ===');
+    console.log('Total Paid:', totalPaid, '($' + (totalPaid / 100) + ')');
+    console.log('Payments Count:', paymentsCount);
+    console.log('Total Expected:', totalExpected, '($' + (totalExpected / 100) + ')');
+    console.log('Current Balance:', currentBalance, '($' + (currentBalance / 100) + ')');
+    console.log('Next Payment Amount:', nextPaymentAmount, '($' + (nextPaymentAmount / 100) + ')');
     console.log('Returning response data:', responseData);
+    console.log('=== END DEBUG ===');
 
     return new Response(JSON.stringify(responseData), { 
       status: 200,

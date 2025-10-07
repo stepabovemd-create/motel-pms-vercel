@@ -30,7 +30,12 @@ export default function CustomerPortal() {
       const response = await fetch(`/api/guests/payments?email=${encodeURIComponent(email)}`);
       const data = await response.json();
       
+      console.log('=== CUSTOMER PORTAL DEBUG ===');
       console.log('API response:', data);
+      console.log('Guest data:', data.guest);
+      console.log('Account balance:', data.guest?.accountBalance, '($' + ((data.guest?.accountBalance || 0) / 100) + ')');
+      console.log('Next payment amount:', data.guest?.nextPaymentAmount, '($' + ((data.guest?.nextPaymentAmount || 0) / 100) + ')');
+      console.log('=== END DEBUG ===');
 
       if (response.ok && data.guest) {
         setGuestData({
