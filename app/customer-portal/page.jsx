@@ -468,7 +468,7 @@ export default function CustomerPortal() {
                   }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 16 }}>
-                        {formatCurrency(payment.amount)} - {payment.plan === 'weekly' ? 'Weekly' : 'Monthly'}
+                        {formatCurrency(payment.amount / 100)} - {payment.plan === 'weekly' ? 'Weekly' : 'Monthly'}
                       </div>
                       <div style={{ fontSize: 14, color: colors.muted }}>
                         {formatDate(payment.payment_date)}

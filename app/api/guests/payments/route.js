@@ -129,6 +129,17 @@ export async function GET(req) {
       nextPaymentAmount = Math.max(0, 80000 - currentBalance); // $800 - credit/debt
     }
 
+    // Calculate correct next payment due date
+    // Should be: last payment date + (number of payments * 1 week)
+    let correctNextDueDate = guest.next_payment_due;
+    if (payments.length > 0) {
+      const lastPaymentDate = new Date(payments[payments.length - 1].payment_date);
+      const weeksPaid = payments.length;
+      const nextDueDate = new Date(lastPaymentDate);
+      nextDueDate.setDate(nextDueDate.getDate() + (weeksPaid * 7));
+      correctNextDueDate = nextDueDate.toISOString();
+    }
+
     const responseData = {
       guest: {
         id: guest.id,
@@ -137,7 +148,7 @@ export async function GET(req) {
         firstPaymentDate: guest.first_payment_date,
         lastPaymentDate: guest.last_payment_date,
         currentPlan: guest.current_plan,
-        nextPaymentDue: guest.next_payment_due,
+        nextPaymentDue: correctNextDueDate,
         accountBalance: currentBalance,
         nextPaymentAmount: nextPaymentAmount
       },
