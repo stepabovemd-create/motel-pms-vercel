@@ -181,10 +181,24 @@ export async function GET(req) {
       nextPaymentAmount = Math.max(0, 80000 - currentBalance); // $800 - credit/debt
     }
 
-    // Calculate correct next payment due date based on COMPLETE periods
+    // Calculate correct next payment due date based on ACTUAL move-in date and complete periods
     let correctNextDueDate = guest.next_payment_due;
     if (payments.length > 0) {
-      const firstPaymentDate = new Date(guest.first_payment_date);
+      // Find the actual move-in date (first payment that includes move-in fee)
+      let moveInDate = null;
+      const sortedPayments = [...payments].sort((a, b) => new Date(a.payment_date) - new Date(b.payment_date));
+      
+      for (let payment of sortedPayments) {
+        if (payment.amount >= (guest.current_plan === 'weekly' ? 35000 : 90000)) {
+          moveInDate = new Date(payment.payment_date);
+          break;
+        }
+      }
+      
+      // If no move-in payment found, use first payment date as fallback
+      if (!moveInDate) {
+        moveInDate = new Date(guest.first_payment_date);
+      }
       
       // Calculate complete periods based on total expected amount
       let completePeriods = 0;
@@ -202,14 +216,23 @@ export async function GET(req) {
         }
       }
       
-      // Next due date = first payment date + complete periods + 1
-      const nextDueDate = new Date(firstPaymentDate);
+      // Next due date = move-in date + complete periods + 1
+      const nextDueDate = new Date(moveInDate);
       if (guest.current_plan === 'weekly') {
         nextDueDate.setDate(nextDueDate.getDate() + ((completePeriods + 1) * 7));
       } else {
         nextDueDate.setMonth(nextDueDate.getMonth() + (completePeriods + 1));
       }
       correctNextDueDate = nextDueDate.toISOString();
+      
+      console.log('Due date calculation:', {
+        moveInDate: moveInDate.toISOString(),
+        completePeriods,
+        calculatedDueDate: correctNextDueDate,
+        totalExpected,
+        standardWeeklyRate,
+        moveInFee
+      });
     }
 
     const responseData = {
