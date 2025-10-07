@@ -255,15 +255,17 @@ export default function SuccessPage() {
                   <span style={{ color: colors.muted, fontWeight: 600 }}>Room Rate:</span>
                   <span style={{ fontWeight: 600 }}>${paymentData.breakdown?.roomRate || (paymentData.plan === 'weekly' ? '250' : '800')}</span>
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  padding: '12px 0',
-                  borderBottom: '1px solid #f1f5f9'
-                }}>
-                  <span style={{ color: colors.muted, fontWeight: 600 }}>Move-in Fee:</span>
-                  <span style={{ fontWeight: 600 }}>${paymentData.breakdown?.moveInFee || '100'}</span>
-                </div>
+                {paymentData.breakdown?.moveInFee && parseFloat(paymentData.breakdown.moveInFee) > 0 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    padding: '12px 0',
+                    borderBottom: '1px solid #f1f5f9'
+                  }}>
+                    <span style={{ color: colors.muted, fontWeight: 600 }}>Move-in Fee:</span>
+                    <span style={{ fontWeight: 600 }}>${paymentData.breakdown.moveInFee}</span>
+                  </div>
+                )}
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between',
