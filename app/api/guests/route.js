@@ -215,7 +215,7 @@ export async function POST(req) {
       dollars: amountInCents / 100 
     });
     
-    const { error: paymentError } = await supabase
+    const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
       .insert({
         guest_id: guestId,
@@ -223,7 +223,8 @@ export async function POST(req) {
         plan: plan,
         session_id: sessionId,
         payment_date: new Date().toISOString()
-      });
+      })
+      .select();
 
     if (paymentError) {
       console.error('Error creating payment record:', paymentError);
@@ -233,20 +234,10 @@ export async function POST(req) {
       });
     }
 
-    // Update account balance and due date manually
-    try {
-      const { error: balanceError } = await supabase.rpc('update_guest_balance_and_due_date', {
-        target_guest_id: guestId
-      });
-      
-      if (balanceError) {
-        console.error('Error updating balance and due date:', balanceError);
-      } else {
-        console.log('Balance and due date updated successfully for guest:', guestId);
-      }
-    } catch (balanceError) {
-      console.error('Error calling balance update function:', balanceError);
-    }
+    console.log('Payment record created:', paymentData);
+
+    // Payment record saved successfully
+    console.log('Payment record saved successfully for guest:', guestId);
     
     return new Response(JSON.stringify({ 
       success: true,
