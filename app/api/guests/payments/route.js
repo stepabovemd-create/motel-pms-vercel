@@ -109,12 +109,10 @@ export async function GET(req) {
         }
         
         // Additional complete periods at $250 each
-        if (completePeriods > 0) {
-          const remainingPayments = totalPaid - runningTotal;
-          const additionalCompletePeriods = Math.floor(remainingPayments / standardWeeklyRate);
-          completePeriods += additionalCompletePeriods;
-          runningTotal += (additionalCompletePeriods * standardWeeklyRate);
-        }
+        const remainingPayments = totalPaid - runningTotal;
+        const additionalCompletePeriods = Math.floor(remainingPayments / standardWeeklyRate);
+        completePeriods += additionalCompletePeriods;
+        runningTotal += (additionalCompletePeriods * standardWeeklyRate);
         
         totalExpected = runningTotal;
       }
@@ -217,11 +215,28 @@ export async function GET(req) {
       }
       
       // Next due date = move-in date + complete periods + 1
+      // But if there's a partial payment toward the next period, show the current period's due date
       const nextDueDate = new Date(moveInDate);
       if (guest.current_plan === 'weekly') {
-        nextDueDate.setDate(nextDueDate.getDate() + ((completePeriods + 1) * 7));
+        // If we have credit/debt, we're working on the current period, not the next one
+        if (currentBalance > 0) {
+          // Credit: show due date for current period (completePeriods + 1)
+          nextDueDate.setDate(nextDueDate.getDate() + ((completePeriods + 1) * 7));
+        } else if (currentBalance < 0) {
+          // Debt: show due date for current period (completePeriods + 1) 
+          nextDueDate.setDate(nextDueDate.getDate() + ((completePeriods + 1) * 7));
+        } else {
+          // Exact amount: show due date for next period (completePeriods + 2)
+          nextDueDate.setDate(nextDueDate.getDate() + ((completePeriods + 2) * 7));
+        }
       } else {
-        nextDueDate.setMonth(nextDueDate.getMonth() + (completePeriods + 1));
+        if (currentBalance > 0) {
+          nextDueDate.setMonth(nextDueDate.getMonth() + (completePeriods + 1));
+        } else if (currentBalance < 0) {
+          nextDueDate.setMonth(nextDueDate.getMonth() + (completePeriods + 1));
+        } else {
+          nextDueDate.setMonth(nextDueDate.getMonth() + (completePeriods + 2));
+        }
       }
       correctNextDueDate = nextDueDate.toISOString();
       
