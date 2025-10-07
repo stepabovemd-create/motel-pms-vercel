@@ -122,20 +122,33 @@ export async function POST(req) {
       });
     }
 
-    // Calculate next payment due date
-    const nextPaymentDate = new Date();
-    if (plan === 'weekly') {
-      nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
-    } else {
-      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-    }
-
     // Check if guest exists
     const { data: existingGuest } = await supabase
       .from('guests')
       .select('*')
       .eq('email', email.toLowerCase())
       .single();
+
+    // Calculate next payment due date based on last payment date
+    let nextPaymentDate;
+    if (existingGuest) {
+      // For existing guests, calculate from last payment date
+      const lastPaymentDate = new Date(existingGuest.last_payment_date);
+      nextPaymentDate = new Date(lastPaymentDate);
+      if (plan === 'weekly') {
+        nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
+      } else {
+        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+      }
+    } else {
+      // For new guests, calculate from today
+      nextPaymentDate = new Date();
+      if (plan === 'weekly') {
+        nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
+      } else {
+        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+      }
+    }
 
     let guestId;
     let isNewGuest = false;
@@ -209,16 +222,16 @@ export async function POST(req) {
       });
     }
 
-    // Update account balance manually
+    // Update account balance and due date manually
     try {
-      const { error: balanceError } = await supabase.rpc('update_guest_balance', {
+      const { error: balanceError } = await supabase.rpc('update_guest_balance_and_due_date', {
         target_guest_id: guestId
       });
       
       if (balanceError) {
-        console.error('Error updating balance:', balanceError);
+        console.error('Error updating balance and due date:', balanceError);
       } else {
-        console.log('Balance updated successfully for guest:', guestId);
+        console.log('Balance and due date updated successfully for guest:', guestId);
       }
     } catch (balanceError) {
       console.error('Error calling balance update function:', balanceError);
