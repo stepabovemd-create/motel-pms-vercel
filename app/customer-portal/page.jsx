@@ -329,29 +329,42 @@ export default function CustomerPortal() {
                 fontSize: 16,
                 lineHeight: 1.6
               }}>
-                Your next payment of <strong style={{ fontSize: 18 }}>
-                  {formatCurrency(guestData.currentPlan === 'weekly' ? 250 : 800)}
-                </strong> is due on{' '}
-                <strong>{formatDate(guestData.nextPaymentDue)}</strong>
+                {guestData.nextPaymentAmount > 0 ? (
+                  <>
+                    Your next payment of <strong style={{ fontSize: 18 }}>
+                      {formatCurrency(guestData.nextPaymentAmount / 100)}
+                    </strong> is due on{' '}
+                    <strong>{formatDate(guestData.nextPaymentDue)}</strong>
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ color: '#166534' }}>No payment due!</strong> You have sufficient credit to cover your next period.
+                    <br />
+                    Next due date: <strong>{formatDate(guestData.nextPaymentDue)}</strong>
+                  </>
+                )}
               </p>
               
               <div style={{ marginTop: 20, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <button 
-                  onClick={() => handlePayment(guestData.currentPlan === 'weekly' ? 250 : 800)}
-                  disabled={paymentLoading}
+                  onClick={() => handlePayment(guestData.nextPaymentAmount / 100)}
+                  disabled={paymentLoading || guestData.nextPaymentAmount <= 0}
                   style={{ 
-                    background: paymentLoading ? '#9ca3af' : colors.primary, 
+                    background: (paymentLoading || guestData.nextPaymentAmount <= 0) ? '#9ca3af' : colors.primary, 
                     color: '#fff', 
                     padding: '12px 24px', 
                     borderRadius: 8, 
                     fontWeight: 600,
                     fontSize: 14,
                     border: 'none',
-                    cursor: paymentLoading ? 'not-allowed' : 'pointer',
+                    cursor: (paymentLoading || guestData.nextPaymentAmount <= 0) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  Pay Full Amount ({formatCurrency(guestData.currentPlan === 'weekly' ? 250 : 800)})
+                  {guestData.nextPaymentAmount > 0 ? 
+                    `Pay Due Amount (${formatCurrency(guestData.nextPaymentAmount / 100)})` : 
+                    'No Payment Due'
+                  }
                 </button>
                 
                 <button 

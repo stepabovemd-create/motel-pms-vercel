@@ -94,6 +94,14 @@ export async function GET(req) {
 
     const currentBalance = balanceData?.balance_cents || 0;
 
+    // Calculate next payment amount considering credit/debt
+    let nextPaymentAmount = 0;
+    if (guest.current_plan === 'weekly') {
+      nextPaymentAmount = Math.max(0, 25000 - currentBalance); // $250 - credit/debt
+    } else {
+      nextPaymentAmount = Math.max(0, 80000 - currentBalance); // $800 - credit/debt
+    }
+
     const responseData = {
       guest: {
         id: guest.id,
@@ -103,7 +111,8 @@ export async function GET(req) {
         lastPaymentDate: guest.last_payment_date,
         currentPlan: guest.current_plan,
         nextPaymentDue: guest.next_payment_due,
-        accountBalance: currentBalance
+        accountBalance: currentBalance,
+        nextPaymentAmount: nextPaymentAmount
       },
       payments: payments || []
     };
