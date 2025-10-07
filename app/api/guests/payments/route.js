@@ -227,11 +227,18 @@ export async function GET(req) {
       
       console.log('Due date calculation:', {
         moveInDate: moveInDate.toISOString(),
+        moveInDateFormatted: moveInDate.toLocaleDateString(),
         completePeriods,
         calculatedDueDate: correctNextDueDate,
+        calculatedDueDateFormatted: new Date(correctNextDueDate).toLocaleDateString(),
         totalExpected,
         standardWeeklyRate,
-        moveInFee
+        moveInFee,
+        payments: payments.map(p => ({
+          date: p.payment_date,
+          amount: p.amount,
+          amountDollars: p.amount / 100
+        }))
       });
     }
 
