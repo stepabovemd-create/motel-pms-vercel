@@ -5,6 +5,8 @@ export default function SuccessPage() {
   const [sessionId, setSessionId] = React.useState(null);
   const [paymentData, setPaymentData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
+  const [paymentCount, setPaymentCount] = React.useState(1);
+  const [nextPaymentAmount, setNextPaymentAmount] = React.useState(250);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -24,25 +26,33 @@ export default function SuccessPage() {
       const data = await res.json();
       setPaymentData(data);
       
-      // Save guest data after successful payment
-      if (data.customerEmail && data.customerName && data.plan) {
-        try {
-          await fetch('/api/guests', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: data.customerEmail,
-              name: data.customerName,
-              plan: data.plan,
-              paymentAmount: data.amount,
-              sessionId: sessionId
-            })
-          });
-          console.log('Guest data saved successfully');
-        } catch (error) {
-          console.error('Failed to save guest data:', error);
-        }
-      }
+              // Save guest data after successful payment
+              if (data.customerEmail && data.customerName && data.plan) {
+                try {
+                  await fetch('/api/guests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: data.customerEmail,
+                      name: data.customerName,
+                      plan: data.plan,
+                      paymentAmount: data.amount,
+                      sessionId: sessionId
+                    })
+                  });
+                  console.log('Guest data saved successfully');
+                  
+                  // Get updated payment count for accurate due date
+                  const guestResponse = await fetch(`/api/guests/payments?email=${encodeURIComponent(data.customerEmail)}`);
+                  const guestData = await guestResponse.json();
+                  if (guestData.payments && guestData.guest) {
+                    setPaymentCount(guestData.payments.length);
+                    setNextPaymentAmount(guestData.guest.nextPaymentAmount / 100);
+                  }
+                } catch (error) {
+                  console.error('Failed to save guest data:', error);
+                }
+              }
     } catch (error) {
       console.error('Failed to fetch payment details:', error);
     } finally {
@@ -50,19 +60,22 @@ export default function SuccessPage() {
     }
   }
 
-  function getNextPaymentDate(plan) {
+  function getNextPaymentDate(plan, paymentCount = 1) {
+    // Calculate based on payment history, not just current date
     const now = new Date();
     if (plan === 'weekly') {
-      const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      return nextWeek.toLocaleDateString('en-US', { 
+      // Add weeks based on how many payments have been made
+      const nextDate = new Date(now.getTime() + (paymentCount * 7 * 24 * 60 * 60 * 1000));
+      return nextDate.toLocaleDateString('en-US', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       });
     } else {
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-      return nextMonth.toLocaleDateString('en-US', { 
+      // For monthly, add months based on payment count
+      const nextDate = new Date(now.getFullYear(), now.getMonth() + paymentCount, now.getDate());
+      return nextDate.toLocaleDateString('en-US', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
@@ -256,8 +269,8 @@ export default function SuccessPage() {
                 fontSize: 16,
                 lineHeight: 1.6
               }}>
-                Your next payment of <strong style={{ fontSize: 18 }}>${paymentData.breakdown?.roomRate || (paymentData.plan === 'weekly' ? '250' : '800')}</strong> is due on{' '}
-                <strong>{getNextPaymentDate(paymentData.plan)}</strong>
+                Your next payment of <strong style={{ fontSize: 18 }}>${nextPaymentAmount}</strong> is due on{' '}
+                <strong>{getNextPaymentDate(paymentData.plan, paymentCount)}</strong>
               </p>
               <p style={{ 
                 color: '#92400e', 
