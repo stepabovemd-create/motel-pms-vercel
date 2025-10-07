@@ -203,6 +203,25 @@ export async function POST(req) {
       isNewGuest = true;
     }
 
+    // Check if payment already exists (prevent duplicates)
+    const { data: existingPayment } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (existingPayment) {
+      console.log('Payment already exists for session:', sessionId);
+      return new Response(JSON.stringify({ 
+        success: true,
+        isNewGuest: isNewGuest,
+        message: 'Payment already recorded'
+      }), { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // Add payment record
     // paymentAmount should already be in cents from Stripe, but let's be safe
     const amountInCents = typeof paymentAmount === 'number' && paymentAmount < 1000 
