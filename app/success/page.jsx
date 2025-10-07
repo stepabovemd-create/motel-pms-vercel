@@ -39,7 +39,7 @@ export default function SuccessPage() {
                     sessionId: sessionId
                   });
                   
-                  const saveResponse = await fetch('/api/guests', {
+                  const saveResponse = await fetch('/api/guests/simple', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -65,7 +65,7 @@ export default function SuccessPage() {
                   
                   // Get updated payment count for accurate due date - force fresh data
                   console.log('Fetching updated guest data...');
-                  const guestResponse = await fetch(`/api/guests/payments?email=${encodeURIComponent(data.customerEmail)}&t=${Date.now()}`);
+                  const guestResponse = await fetch(`/api/guests/simple?email=${encodeURIComponent(data.customerEmail)}&t=${Date.now()}`);
                   
                   if (!guestResponse.ok) {
                     throw new Error(`Failed to fetch guest data: ${guestResponse.status}`);
