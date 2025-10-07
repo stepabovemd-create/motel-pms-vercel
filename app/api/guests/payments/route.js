@@ -130,12 +130,12 @@ export async function GET(req) {
     }
 
     // Calculate correct next payment due date
-    // Should be: last payment date + (number of payments * 1 week)
+    // Should be: first payment date + (number of payments * 1 week)
     let correctNextDueDate = guest.next_payment_due;
     if (payments.length > 0) {
-      const lastPaymentDate = new Date(payments[payments.length - 1].payment_date);
+      const firstPaymentDate = new Date(guest.first_payment_date);
       const weeksPaid = payments.length;
-      const nextDueDate = new Date(lastPaymentDate);
+      const nextDueDate = new Date(firstPaymentDate);
       nextDueDate.setDate(nextDueDate.getDate() + (weeksPaid * 7));
       correctNextDueDate = nextDueDate.toISOString();
     }
