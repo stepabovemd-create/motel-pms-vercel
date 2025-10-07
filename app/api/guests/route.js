@@ -204,11 +204,22 @@ export async function POST(req) {
     }
 
     // Add payment record
+    // paymentAmount should already be in cents from Stripe, but let's be safe
+    const amountInCents = typeof paymentAmount === 'number' && paymentAmount < 1000 
+      ? Math.round(paymentAmount * 100)  // If it looks like dollars, convert to cents
+      : Math.round(paymentAmount);       // If it looks like cents already, use as-is
+    
+    console.log('Payment amount conversion:', { 
+      original: paymentAmount, 
+      converted: amountInCents, 
+      dollars: amountInCents / 100 
+    });
+    
     const { error: paymentError } = await supabase
       .from('payments')
       .insert({
         guest_id: guestId,
-        amount: Math.round(paymentAmount * 100), // Convert to cents
+        amount: amountInCents,
         plan: plan,
         session_id: sessionId,
         payment_date: new Date().toISOString()
