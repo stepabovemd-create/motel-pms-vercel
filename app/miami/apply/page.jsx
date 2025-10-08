@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 
 export default function MiamiApply() {
-  const [values, setValues] = useState({ firstName: '', lastName: '', email: '', phone: '', checkInDate: '', stayPlan: 'weekly' });
+  const [values, setValues] = useState({ firstName: '', lastName: '', email: '', phone: '', checkInDate: '', stayPlan: 'weekly', roomNumber: '' });
   const [errors, setErrors] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
@@ -11,6 +11,26 @@ export default function MiamiApply() {
   const [idPhoto, setIdPhoto] = useState(null);
   const [emailSent, setEmailSent] = useState(false);
   const [stripeIdentitySession, setStripeIdentitySession] = useState(null);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+
+  // Fetch available rooms
+  const fetchAvailableRooms = async () => {
+    setLoadingRooms(true);
+    try {
+      const response = await fetch('/api/rooms/availability');
+      const data = await response.json();
+      if (response.ok) {
+        setAvailableRooms(data.rooms || []);
+      } else {
+        console.error('Failed to fetch rooms:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
 
   // Load Stripe SDK for payments and Identity
   useEffect(() => {
@@ -69,6 +89,11 @@ export default function MiamiApply() {
     }
   }, []);
 
+  // Fetch available rooms on component mount
+  useEffect(() => {
+    fetchAvailableRooms();
+  }, []);
+
   // Save form data to localStorage
   const saveFormData = (formValues) => {
     localStorage.setItem('miami-motel-form-data', JSON.stringify(formValues));
@@ -121,6 +146,11 @@ export default function MiamiApply() {
     
     if (!idVerified) {
       setErrors(['Please verify your ID first']);
+      return;
+    }
+    
+    if (!values.roomNumber) {
+      setErrors(['Please select a room']);
       return;
     }
     
@@ -518,6 +548,53 @@ export default function MiamiApply() {
                       <option value="monthly">Monthly</option>
                     </select>
                   </div>
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: 8, 
+                    fontWeight: 600, 
+                    color: colors.text,
+                    fontSize: 14
+                  }}>Room Selection</label>
+                  {loadingRooms ? (
+                    <div style={{ 
+                      padding: 14, 
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12,
+                      textAlign: 'center',
+                      color: colors.muted
+                    }}>
+                      Loading available rooms...
+                    </div>
+                  ) : availableRooms.length > 0 ? (
+                    <select style={{ 
+                      width: '100%',
+                      border: `2px solid ${colors.border}`, 
+                      borderRadius: 12, 
+                      padding: 14,
+                      fontSize: 16,
+                      transition: 'all 0.3s ease',
+                      boxSizing: 'border-box'
+                    }} value={values.roomNumber} onChange={e => setValues(v => ({ ...v, roomNumber: e.target.value }))} required>
+                      <option value="">Select a room</option>
+                      {availableRooms.map(room => (
+                        <option key={room.room_number} value={room.room_number}>
+                          Room {room.room_number} - {room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div style={{ 
+                      padding: 14, 
+                      border: `2px solid #fecaca`, 
+                      borderRadius: 12,
+                      background: '#fff1f2',
+                      color: '#991b1b'
+                    }}>
+                      No rooms currently available. Please contact us directly.
+                    </div>
+                  )}
                 </div>
               </form>
             </section>

@@ -278,10 +278,16 @@ export default function CustomerPortal() {
                   <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>Email</div>
                   <div style={{ fontSize: 18, fontWeight: 700 }}>{guestData.email}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>Current Plan</div>
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>{guestData.currentPlan === 'weekly' ? 'Weekly' : 'Monthly'}</div>
-                </div>
+                        <div>
+                          <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>Current Plan</div>
+                          <div style={{ fontSize: 18, fontWeight: 700 }}>{guestData.currentPlan === 'weekly' ? 'Weekly' : 'Monthly'}</div>
+                        </div>
+                        {guestData.roomNumber && (
+                          <div>
+                            <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>Room Number</div>
+                            <div style={{ fontSize: 18, fontWeight: 700 }}>{guestData.roomNumber}</div>
+                          </div>
+                        )}
                 <div>
                   <div style={{ fontSize: 14, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>Total Payments</div>
                   <div style={{ fontSize: 18, fontWeight: 700 }}>{guestData.totalPayments}</div>

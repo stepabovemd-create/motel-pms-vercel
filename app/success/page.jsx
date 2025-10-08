@@ -41,7 +41,8 @@ export default function SuccessPage() {
                       name: data.customerName,
                       plan: data.plan,
                       paymentAmount: data.amount,
-                      sessionId: sessionId
+                      sessionId: sessionId,
+                      roomNumber: data.roomNumber
                     })
                   });
                   
@@ -232,6 +233,17 @@ export default function SuccessPage() {
                   <span style={{ color: colors.muted, fontWeight: 600 }}>Plan:</span>
                   <span style={{ fontWeight: 600 }}>{paymentData.plan === 'weekly' ? 'Weekly' : 'Monthly'}</span>
                 </div>
+                {paymentData.roomNumber && (
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    padding: '12px 0',
+                    borderBottom: '1px solid #f1f5f9'
+                  }}>
+                    <span style={{ color: colors.muted, fontWeight: 600 }}>Room Number:</span>
+                    <span style={{ fontWeight: 600 }}>{paymentData.roomNumber}</span>
+                  </div>
+                )}
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between',

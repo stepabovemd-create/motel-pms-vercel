@@ -100,7 +100,8 @@ export async function GET(req) {
         currentPlan: guest.current_plan,
         nextPaymentDue: nextDueDate.toISOString(),
         accountBalance: accountBalance,
-        nextPaymentAmount: nextPaymentAmount
+        nextPaymentAmount: nextPaymentAmount,
+        roomNumber: guest.room_number
       },
       payments: payments || []
     };
@@ -123,7 +124,7 @@ export async function GET(req) {
 // POST - Simple payment save
 export async function POST(req) {
   try {
-    const { email, name, plan, paymentAmount, sessionId } = await req.json();
+    const { email, name, plan, paymentAmount, sessionId, roomNumber } = await req.json();
     
     
     if (!email || !name || !plan) {
@@ -216,11 +217,34 @@ export async function POST(req) {
       });
     }
 
+    // Assign room if room number provided and this is a new guest
+    if (roomNumber && isNewGuest) {
+      try {
+        const assignResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/rooms/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            guestId: guestId,
+            roomNumber: roomNumber
+          })
+        });
+        
+        const assignResult = await assignResponse.json();
+        if (!assignResponse.ok) {
+          console.error('Room assignment failed:', assignResult.error);
+        } else {
+          console.log('Room assigned successfully:', roomNumber);
+        }
+      } catch (error) {
+        console.error('Error assigning room:', error);
+      }
+    }
 
     return new Response(JSON.stringify({ 
       success: true,
       isNewGuest: isNewGuest,
-      guestId: guestId
+      guestId: guestId,
+      roomNumber: roomNumber || null
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
