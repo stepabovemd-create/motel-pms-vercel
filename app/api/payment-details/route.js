@@ -35,7 +35,11 @@ export async function GET(req) {
     // Calculate room rate and move-in fee breakdown
     const roomRate = plan === 'weekly' ? 250 : 800; // $250 or $800
     const moveInFee = 100; // $100
-    const totalExpected = roomRate + moveInFee;
+    
+    // Check if this is a new guest (first payment with move-in fee)
+    const isNewGuest = session.metadata?.isNewGuest === 'true';
+    const actualMoveInFee = isNewGuest ? moveInFee : 0;
+    const totalExpected = roomRate + actualMoveInFee;
 
     return new Response(JSON.stringify({
       amount,
@@ -46,7 +50,7 @@ export async function GET(req) {
       sessionId: session.id,
       breakdown: {
         roomRate: roomRate,
-        moveInFee: moveInFee,
+        moveInFee: actualMoveInFee,
         total: totalExpected
       }
     }), { 
