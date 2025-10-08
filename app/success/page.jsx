@@ -31,13 +31,6 @@ export default function SuccessPage() {
               // Save guest data after successful payment
               if (data.customerEmail && data.customerName && data.plan) {
                 try {
-                  console.log('Saving guest data:', {
-                    email: data.customerEmail,
-                    name: data.customerName,
-                    plan: data.plan,
-                    amount: data.amount,
-                    sessionId: sessionId
-                  });
                   
                   const saveResponse = await fetch('/api/guests/simple', {
                     method: 'POST',
@@ -52,19 +45,16 @@ export default function SuccessPage() {
                   });
                   
                   const saveResult = await saveResponse.json();
-                  console.log('Guest save response:', saveResponse.status, saveResult);
                   
                   if (!saveResponse.ok) {
                     throw new Error(`Failed to save guest data: ${saveResult.error || 'Unknown error'}`);
                   }
                   
-                  console.log('Guest data saved successfully');
                   
                   // Wait a moment for database to be fully updated
                   await new Promise(resolve => setTimeout(resolve, 2000));
                   
                   // Get updated payment count for accurate due date - force fresh data
-                  console.log('Fetching updated guest data...');
                   const guestResponse = await fetch(`/api/guests/simple?email=${encodeURIComponent(data.customerEmail)}&t=${Date.now()}`);
                   
                   if (!guestResponse.ok) {
@@ -72,14 +62,8 @@ export default function SuccessPage() {
                   }
                   
                   const guestData = await guestResponse.json();
-                  console.log('Updated guest data received:', guestData);
                   
                   if (guestData.payments && guestData.guest) {
-                    console.log('Success page - Updated data:', {
-                      paymentCount: guestData.payments.length,
-                      nextPaymentAmount: guestData.guest.nextPaymentAmount,
-                      nextPaymentDue: guestData.guest.nextPaymentDue
-                    });
                     setPaymentCount(guestData.payments.length);
                     setNextPaymentAmount(guestData.guest.nextPaymentAmount / 100);
                     setNextPaymentDue(guestData.guest.nextPaymentDue);

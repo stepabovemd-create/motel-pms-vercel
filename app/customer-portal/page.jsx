@@ -26,17 +26,9 @@ export default function CustomerPortal() {
     setError('');
 
     try {
-      console.log('Fetching guest data for:', email);
       // Add cache-busting parameter to force fresh data
-              const response = await fetch(`/api/guests/simple?email=${encodeURIComponent(email)}&t=${Date.now()}`);
+      const response = await fetch(`/api/guests/simple?email=${encodeURIComponent(email)}&t=${Date.now()}`);
       const data = await response.json();
-      
-      console.log('=== CUSTOMER PORTAL DEBUG ===');
-      console.log('API response:', data);
-      console.log('Guest data:', data.guest);
-      console.log('Account balance:', data.guest?.accountBalance, '($' + ((data.guest?.accountBalance || 0) / 100) + ')');
-      console.log('Next payment amount:', data.guest?.nextPaymentAmount, '($' + ((data.guest?.nextPaymentAmount || 0) / 100) + ')');
-      console.log('=== END DEBUG ===');
 
       if (response.ok && data.guest) {
         setGuestData({
@@ -45,11 +37,6 @@ export default function CustomerPortal() {
           totalPayments: (data.payments || []).length
         });
         setIsLoggedIn(true);
-        console.log('Guest data set:', {
-          ...data.guest,
-          payments: data.payments || [],
-          totalPayments: (data.payments || []).length
-        });
       } else {
         setError('No payment history found for this email address. Please use the application form to make your first payment.');
       }

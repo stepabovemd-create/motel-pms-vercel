@@ -100,18 +100,9 @@ export async function GET(req) {
         accountBalance: accountBalance,
         nextPaymentAmount: nextPaymentAmount
       },
-      payments: payments || [],
-      debug: {
-        totalPaid,
-        totalPaidDollars: totalPaid / 100,
-        moveInDate: moveInDate.toISOString(),
-        nextDueDate: nextDueDate.toISOString(),
-        accountBalanceDollars: accountBalance / 100,
-        nextPaymentAmountDollars: nextPaymentAmount / 100
-      }
+      payments: payments || []
     };
 
-    console.log('Simple calculation result:', responseData.debug);
 
     return new Response(JSON.stringify(responseData), { 
       status: 200,
@@ -132,7 +123,6 @@ export async function POST(req) {
   try {
     const { email, name, plan, paymentAmount, sessionId } = await req.json();
     
-    console.log('Simple POST - Data:', { email, name, plan, paymentAmount, sessionId });
     
     if (!email || !name || !plan) {
       return new Response(JSON.stringify({ error: 'Email, name, and plan required' }), { 
@@ -149,7 +139,6 @@ export async function POST(req) {
       .single();
 
     if (existingPayment) {
-      console.log('Payment already exists for session:', sessionId);
       return new Response(JSON.stringify({ 
         success: true,
         message: 'Payment already recorded'
@@ -173,7 +162,6 @@ export async function POST(req) {
 
     if (existingGuest) {
       guestId = existingGuest.id;
-      console.log('Using existing guest:', guestId);
     } else {
       // Create new guest
       const { data: newGuest, error: createError } = await supabase
@@ -200,7 +188,6 @@ export async function POST(req) {
 
       guestId = newGuest.id;
       isNewGuest = true;
-      console.log('Created new guest:', guestId);
     }
 
     // Save payment
@@ -227,7 +214,6 @@ export async function POST(req) {
       });
     }
 
-    console.log('Payment saved successfully:', paymentData);
 
     return new Response(JSON.stringify({ 
       success: true,
