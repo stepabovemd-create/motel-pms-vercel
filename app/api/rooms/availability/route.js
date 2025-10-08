@@ -10,9 +10,6 @@ const supabase = createClient(
 // GET - Get available rooms
 export async function GET(req) {
   try {
-    const { searchParams } = new URL(req.url);
-    const roomType = searchParams.get('type'); // optional filter by room type
-    
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(JSON.stringify({ 
@@ -24,17 +21,12 @@ export async function GET(req) {
       });
     }
 
-    // Build query
-    let query = supabase
+    // Get all available rooms (all same type)
+    const query = supabase
       .from('rooms')
       .select('room_number, room_type, status')
       .eq('status', 'available')
       .order('room_number', { ascending: true });
-
-    // Add room type filter if specified
-    if (roomType && roomType !== 'all') {
-      query = query.eq('room_type', roomType);
-    }
 
     const { data: rooms, error } = await query;
 

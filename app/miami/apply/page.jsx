@@ -580,7 +580,7 @@ export default function MiamiApply() {
                       <option value="">Select a room</option>
                       {availableRooms.map(room => (
                         <option key={room.room_number} value={room.room_number}>
-                          Room {room.room_number} - {room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1)}
+                          Room {room.room_number}
                         </option>
                       ))}
                     </select>
