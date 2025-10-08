@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '20
 
 export async function POST(req) {
   try {
-    const { email, name, plan, customAmount } = await req.json();
+    const { email, name, plan, customAmount, roomNumber } = await req.json();
     if (!email || !name || !plan) return new Response(JSON.stringify({ error: 'email, name, and plan required' }), { status: 400 });
     if (!['weekly', 'monthly'].includes(plan)) return new Response(JSON.stringify({ error: 'Invalid plan' }), { status: 400 });
 
@@ -84,6 +84,7 @@ export async function POST(req) {
                 plan, 
                 name, 
                 email, 
+                roomNumber: roomNumber || '',
                 isNewGuest: isNewGuest.toString(), 
                 moveInFee: isNewGuest ? '10000' : '0',
                 customAmount: customAmount ? (customAmount * 100).toString() : '0',

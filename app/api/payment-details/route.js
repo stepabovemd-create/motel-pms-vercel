@@ -27,10 +27,11 @@ export async function GET(req) {
     }
 
     // Extract payment information
-    const amount = session.amount_total / 100; // Convert from cents
-    const plan = session.metadata?.plan || 'weekly';
-    const customerName = session.metadata?.name || 'Guest';
-    const customerEmail = session.customer_email || session.metadata?.email || '';
+            const amount = session.amount_total / 100; // Convert from cents
+            const plan = session.metadata?.plan || 'weekly';
+            const customerName = session.metadata?.name || 'Guest';
+            const customerEmail = session.customer_email || session.metadata?.email || '';
+            const roomNumber = session.metadata?.roomNumber || '';
     
     // Calculate room rate and move-in fee breakdown
     const roomRate = plan === 'weekly' ? 250 : 800; // $250 or $800
@@ -41,19 +42,20 @@ export async function GET(req) {
     const actualMoveInFee = isNewGuest ? moveInFee : 0;
     const totalExpected = roomRate + actualMoveInFee;
 
-    return new Response(JSON.stringify({
-      amount,
-      plan,
-      customerName,
-      customerEmail,
-      paymentStatus: session.payment_status,
-      sessionId: session.id,
-      breakdown: {
-        roomRate: roomRate,
-        moveInFee: actualMoveInFee,
-        total: totalExpected
-      }
-    }), { 
+            return new Response(JSON.stringify({
+              amount,
+              plan,
+              customerName,
+              customerEmail,
+              roomNumber,
+              paymentStatus: session.payment_status,
+              sessionId: session.id,
+              breakdown: {
+                roomRate: roomRate,
+                moveInFee: actualMoveInFee,
+                total: totalExpected
+              }
+            }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

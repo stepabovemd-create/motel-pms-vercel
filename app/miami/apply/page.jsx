@@ -180,7 +180,8 @@ export default function MiamiApply() {
         body: JSON.stringify({ 
           name: `${values.firstName} ${values.lastName}`, 
           email: values.email, 
-          plan: values.stayPlan 
+          plan: values.stayPlan,
+          roomNumber: values.roomNumber
         }) 
       });
       const checkoutJson = await checkoutRes.json();

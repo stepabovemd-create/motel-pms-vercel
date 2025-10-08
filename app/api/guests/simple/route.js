@@ -220,20 +220,46 @@ export async function POST(req) {
     // Assign room if room number provided and this is a new guest
     if (roomNumber && isNewGuest) {
       try {
-        const assignResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/rooms/assign`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            guestId: guestId,
-            roomNumber: roomNumber
-          })
-        });
-        
-        const assignResult = await assignResponse.json();
-        if (!assignResponse.ok) {
-          console.error('Room assignment failed:', assignResult.error);
+        // Check if room is available
+        const { data: room, error: roomError } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('room_number', roomNumber)
+          .eq('status', 'available')
+          .single();
+
+        if (roomError || !room) {
+          console.error('Room not available or does not exist:', roomError);
         } else {
-          console.log('Room assigned successfully:', roomNumber);
+          // Update room status to occupied
+          const { error: updateRoomError } = await supabase
+            .from('rooms')
+            .update({
+              status: 'occupied',
+              guest_id: guestId,
+              check_in_date: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('room_number', roomNumber);
+
+          if (updateRoomError) {
+            console.error('Error updating room status:', updateRoomError);
+          } else {
+            // Also update the guest record with room number
+            const { error: updateGuestRoomError } = await supabase
+              .from('guests')
+              .update({
+                room_number: roomNumber,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', guestId);
+
+            if (updateGuestRoomError) {
+              console.error('Error updating guest room number:', updateGuestRoomError);
+            } else {
+              console.log('Room assigned successfully:', roomNumber);
+            }
+          }
         }
       } catch (error) {
         console.error('Error assigning room:', error);
