@@ -8,6 +8,7 @@ export default function SuccessPage() {
   const [paymentCount, setPaymentCount] = React.useState(1);
   const [nextPaymentAmount, setNextPaymentAmount] = React.useState(250);
   const [nextPaymentDue, setNextPaymentDue] = React.useState(null);
+  const [accountBalance, setAccountBalance] = React.useState(0);
   const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
@@ -67,6 +68,7 @@ export default function SuccessPage() {
                     setPaymentCount(guestData.payments.length);
                     setNextPaymentAmount(guestData.guest.nextPaymentAmount / 100);
                     setNextPaymentDue(guestData.guest.nextPaymentDue);
+                    setAccountBalance(guestData.guest.accountBalance / 100);
                   } else {
                     console.error('Invalid guest data structure:', guestData);
                   }
@@ -261,7 +263,8 @@ export default function SuccessPage() {
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between',
-                  padding: '12px 0'
+                  padding: '12px 0',
+                  borderBottom: '1px solid #f1f5f9'
                 }}>
                   <span style={{ color: colors.muted, fontWeight: 600 }}>Payment Date:</span>
                   <span>{new Date().toLocaleDateString('en-US', { 
@@ -270,6 +273,22 @@ export default function SuccessPage() {
                     month: 'long', 
                     day: 'numeric' 
                   })}</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  padding: '12px 0'
+                }}>
+                  <span style={{ color: colors.muted, fontWeight: 600 }}>
+                    {accountBalance >= 0 ? 'Account Credit:' : 'Balance Due:'}
+                  </span>
+                  <span style={{ 
+                    fontWeight: 700, 
+                    fontSize: 16,
+                    color: accountBalance >= 0 ? '#166534' : colors.primary
+                  }}>
+                    ${Math.abs(accountBalance).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
