@@ -33,15 +33,12 @@ export async function GET(req) {
     const customerEmail = session.customer_email || session.metadata?.email || '';
     
     // Calculate room rate and move-in fee breakdown
-    const standardRoomRate = plan === 'weekly' ? 250 : 800; // $250 or $800
+    const roomRate = plan === 'weekly' ? 250 : 800; // $250 or $800
     const moveInFee = 100; // $100
     
     // Check if this is a new guest (first payment with move-in fee)
     const isNewGuest = session.metadata?.isNewGuest === 'true';
     const actualMoveInFee = isNewGuest ? moveInFee : 0;
-    
-    // For first payment, show standard room rate. For subsequent payments, show actual payment amount
-    const roomRate = isNewGuest ? standardRoomRate : amount;
     const totalExpected = roomRate + actualMoveInFee;
 
     return new Response(JSON.stringify({
