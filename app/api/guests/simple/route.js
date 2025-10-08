@@ -71,17 +71,19 @@ export async function GET(req) {
 
     if (totalPaid >= 35000) {
       // They paid the first week completely ($250 + $100 move-in fee)
-      const amountAfterFirstWeek = totalPaid - 35000;
+      let amountAfterFirstWeek = totalPaid - 35000;
       
-      if (amountAfterFirstWeek > 0) {
-        // They have credit toward next week(s)
-        accountBalance = amountAfterFirstWeek; // Credit amount
-        nextPaymentAmount = Math.max(0, 25000 - amountAfterFirstWeek); // $250 minus credit
-      } else {
-        // Exactly paid for first week, no credit or debt
-        accountBalance = 0;
-        nextPaymentAmount = 25000; // $250 for next week
+      // Calculate how many complete additional weeks they've paid for
+      const additionalCompleteWeeks = Math.floor(amountAfterFirstWeek / 25000);
+      const remainingCredit = amountAfterFirstWeek % 25000;
+      
+      // Update due date based on complete weeks
+      if (additionalCompleteWeeks > 0) {
+        nextDueDate.setDate(nextDueDate.getDate() + (additionalCompleteWeeks * 7));
       }
+      
+      accountBalance = remainingCredit; // Credit toward next week
+      nextPaymentAmount = Math.max(0, 25000 - remainingCredit); // $250 minus remaining credit
     } else if (totalPaid > 0) {
       // Partial payment toward first week
       accountBalance = -totalPaid; // Debt (negative balance)
